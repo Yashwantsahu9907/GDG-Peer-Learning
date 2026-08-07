@@ -1,40 +1,88 @@
 import React, { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Users, BookOpenCheck, Zap } from 'lucide-react';
+import { getStoredUser, setStoredUser } from '../utils/userClient';
 
 const Home = () => {
   useEffect(() => {
-    // Example socket connection to test setup
-    const socket = io('http://localhost:5000');
-    
-    socket.on('connect', () => {
-      console.log('Connected to socket server from client');
+    const initializeUser = async () => {
+      const storedUser = getStoredUser();
+      if (storedUser?.userId) {
+        return storedUser;
+      }
+
+      const response = await fetch('http://localhost:5000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: 'Guest' })
+      });
+
+      const data = await response.json();
+      const newUser = { userId: data.userId, name: data.name };
+      setStoredUser(newUser);
+      return newUser;
+    };
+
+    const setupSocket = async () => {
+      const user = await initializeUser();
+      const socket = io('http://localhost:5000', {
+        auth: {
+          userId: user.userId
+        }
+      });
+
+      socket.on('connect', () => {
+        console.log('Connected to socket server from client', user.userId);
+      });
+
+      return socket;
+    };
+
+    let socket;
+    setupSocket().then((s) => {
+      socket = s;
     });
 
     return () => {
-      socket.disconnect();
+      socket?.disconnect();
     };
   }, []);
 
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="text-center py-16 px-4 sm:px-6 lg:px-8 bg-white rounded-3xl shadow-sm border border-slate-100 mt-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-50/50 to-white/10 z-0"></div>
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-6">
-            Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">GDG Peer Learning</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-slate-600 mb-8 leading-relaxed">
-            A collaborative platform for students and professionals to learn, share knowledge, and grow together. Join study groups, access curated resources, and engage in real-time discussions.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all transform hover:-translate-y-0.5">
-              Get Started
-            </button>
-            <button className="px-8 py-3.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-all">
-              Browse Courses
-            </button>
+      <section className="leetcode-hero leetcode-card mt-6">
+        <div className="hero-left">
+          <h1 className="text-4xl font-extrabold">Sharpen your skills with GDG Peer Learning</h1>
+          <p className="mt-4">Practice problems, join study groups, and collaborate in real-time — all in one community-driven platform.</p>
+
+          <div className="cta-row">
+            <button className="leetcode-btn">Start Solving</button>
+            <button className="px-4 py-2 border rounded-md">Explore Tracks</button>
+          </div>
+
+          <div className="leetcode-stats">
+            <div className="stat">1.2k Questions</div>
+            <div className="stat">8.9k Learners</div>
+            <div className="stat">320 Groups</div>
+          </div>
+        </div>
+
+        <div className="hero-right">
+          <div className="leetcode-codebox">
+            <div className="text-sm text-slate-400">Example</div>
+            <pre className="mt-2">{
+`function twoSum(nums, target) {
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (map.has(complement)) return [map.get(complement), i];
+    map.set(nums[i], i);
+  }
+}`
+            }</pre>
           </div>
         </div>
       </section>
