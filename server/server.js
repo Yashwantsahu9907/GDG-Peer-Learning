@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import connectDB from './config/db.js';
+import User from './models/User.js';
 
 // Connect to database
 connectDB();
@@ -27,12 +28,45 @@ app.use(cors({
 app.use(express.json());
 
 // Socket.io Connection
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+io.on('connection', async (socket) => {
+  const { userId } = socket.handshake.auth || {};
+  const displayId = userId || socket.id;
+
+  if (userId) {
+    const user = await User.findOne({ userId });
+    console.log(`User connected: socketId=${socket.id} userId=${displayId} ${user ? '(found)' : '(unknown user)'}`);
+  } else {
+    console.log(`User connected: socketId=${socket.id} userId=anonymous`);
+  }
 
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
+    console.log(`User disconnected: ${socket.id} userId=${displayId}`);
   });
+});
+
+// User API routes
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name } = req.body;
+    const user = await User.create({ name });
+    res.status(201).json({ success: true, userId: user.userId, name: user.name });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ success: false, message: 'Unable to create user' });
+  }
+});
+
+app.get('/api/users/:userId', async (req, res) => {
+  try {
+    const user = await User.findOne({ userId: req.params.userId }).lean();
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ success: false, message: 'Unable to fetch user' });
+  }
 });
 
 // Basic Route
