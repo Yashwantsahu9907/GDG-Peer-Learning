@@ -92,44 +92,57 @@ const Meeting = () => {
   };
 
   return (
-    <div className="h-screen full-bleed p-0">
+    <div className="h-[calc(100vh-4rem)] mt-16 p-0 bg-[var(--color-bg-primary)] overflow-hidden">
       <div ref={containerRef} className="h-full flex relative" style={{ gap: 16 }}>
-        <div style={{ width: `${leftPct}%`, minWidth: '300px' }} className="h-full p-4">
-          <div className="h-full leetcode-card p-4">
-            <div className="panel-header">
-              <div>Editor</div>
-              <div className="panel-controls">
-                <button onClick={() => { setLeftPct(65); setRightTopPct(50); }} className="px-2 py-1">Reset</button>
+        <div style={{ width: `${leftPct}%`, minWidth: '300px' }} className="h-full py-4 pl-4">
+          <div className="h-full gfg-panel p-4 flex flex-col">
+            <div className="flex justify-between items-center border-b border-[var(--color-border)] pb-2">
+              <div className="font-bold text-[var(--color-text-primary)]">Code Editor</div>
+              <div>
+                <button onClick={() => { setLeftPct(65); setRightTopPct(50); }} className="px-3 py-1 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border)] text-[var(--color-text-primary)] rounded-md text-xs font-semibold transition-colors">Reset Layout</button>
               </div>
             </div>
-            <div className="h-[calc(100%-48px)] mt-2 transition-all duration-150">
+            <div className="flex-grow mt-4 transition-all duration-150">
               <CodeEditor />
             </div>
           </div>
         </div>
 
-        <div style={{ width: `${100 - leftPct}%` }} className="h-full p-4 flex flex-col" ref={rightRef}>
-          <div style={{ height: `${rightTopPct}%` }} className="h-1/2 transition-all duration-150">
-            <div className="h-full leetcode-card p-4">
-              <div className="panel-header"><div>Whiteboard</div></div>
-              <div className="h-[calc(100%-28px)] mt-2">
+        <div style={{ width: `${100 - leftPct}%` }} className="h-full py-4 pr-4 flex flex-col relative" ref={rightRef}>
+          <div style={{ height: `${rightTopPct}%` }} className="h-1/2 transition-all duration-150 pb-2">
+            <div className="h-full gfg-panel p-4 flex flex-col">
+              <div className="font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-2">Whiteboard</div>
+              <div className="flex-grow mt-4">
                 <Whiteboard />
               </div>
             </div>
           </div>
 
-          <div onPointerDown={startHorizontalDrag} className="divider-horizontal" />
+          <div 
+            onPointerDown={startHorizontalDrag} 
+            className="absolute left-0 right-4 h-4 cursor-row-resize z-10 flex items-center justify-center hover:bg-[var(--color-accent-muted)] transition-colors rounded"
+            style={{ top: `calc(${rightTopPct}% - 8px)` }}
+          >
+            <div className="w-8 h-1 bg-[var(--color-border)] rounded-full"></div>
+          </div>
 
-          <div style={{ height: `${100 - rightTopPct}%` }} className="h-1/2 transition-all duration-150">
-            <div className="h-full leetcode-card p-4">
-              <div className="panel-header"><div>Camera</div></div>
-              <div className="h-[calc(100%-28px)] mt-2">
+          <div style={{ height: `${100 - rightTopPct}%` }} className="h-1/2 transition-all duration-150 pt-2">
+            <div className="h-full gfg-panel p-4 flex flex-col">
+              <div className="font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-2">Camera</div>
+              <div className="flex-grow mt-4">
                 <CameraPanel />
               </div>
             </div>
           </div>
         </div>
-        <div onPointerDown={startVerticalDrag} className="divider-vertical" style={{ position: 'absolute', right: `${100 - leftPct}%`, top: 0, bottom: 0, transform: 'translateX( -4px )' }} />
+        
+        <div 
+          onPointerDown={startVerticalDrag} 
+          className="absolute top-4 bottom-4 w-4 cursor-col-resize z-10 flex flex-col items-center justify-center hover:bg-[var(--color-accent-muted)] transition-colors rounded" 
+          style={{ right: `${100 - leftPct}%`, transform: 'translateX(8px)' }} 
+        >
+          <div className="h-8 w-1 bg-[var(--color-border)] rounded-full"></div>
+        </div>
       </div>
     </div>
   );
