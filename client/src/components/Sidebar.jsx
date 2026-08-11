@@ -38,14 +38,14 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-[var(--color-bg-primary)] border-r border-[var(--color-border)] h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto hide-scrollbar shrink-0">
+    <aside className="hidden md:flex flex-col w-64 bg-[var(--color-bg-primary)] border-r border-[var(--color-border)] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto hide-scrollbar shrink-0">
       <div className="flex-1 py-6 px-4 space-y-8">
         {navSections.map((section, idx) => (
           <div key={idx}>
-            <h3 className="px-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
+            <h3 className="px-3 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
               {section.title}
             </h3>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {section.items.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -53,10 +53,10 @@ const Sidebar = () => {
                     key={item.name}
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
                         isActive
-                          ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]'
-                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)]'
+                          ? 'bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm border border-[var(--color-border)]'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] border border-transparent'
                       }`
                     }
                   >

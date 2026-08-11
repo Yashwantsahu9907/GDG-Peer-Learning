@@ -45,8 +45,23 @@
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
   }
+  .panel-flat {
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  }
   .card-hover {
-    @apply transition-transform duration-200 hover:-translate-y-[2px];
+    @apply transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm hover:border-[var(--color-text-muted)];
+  }
+  .interactive-bg {
+    @apply hover:bg-[var(--color-bg-secondary)] transition-colors cursor-pointer;
+  }
+  .divider-x {
+    @apply border-r border-[var(--color-border)];
+  }
+  .divider-y {
+    @apply border-b border-[var(--color-border)];
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -54,5 +69,11 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
