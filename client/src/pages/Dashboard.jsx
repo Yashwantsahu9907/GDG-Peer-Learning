@@ -1,182 +1,174 @@
-import React from 'react';
-import { Calendar, Video, Clock, CheckCircle2, ChevronRight, Activity, Flame, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Video, Clock, CheckCircle2, ChevronRight, Activity, Flame, Target, Users, Search, Plus } from 'lucide-react';
+import { getStoredUser } from '../utils/userClient';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  // Mock Data
-  const upcomingSessions = [
-    { id: 1, type: 'mentoring', peer: 'Alice Chen', skill: 'React Hooks', time: 'Today, 2:00 PM', avatar: 'AC' },
-    { id: 2, type: 'learning', peer: 'David Kumar', skill: 'Docker Basics', time: 'Tomorrow, 10:00 AM', avatar: 'DK' }
+  const user = getStoredUser();
+  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState('All Topics');
+
+  // Real data structure for sessions
+  const liveSessions = [
+    { 
+      id: 1, 
+      title: 'Mastering Graph Algorithms', 
+      description: 'BFS, DFS & Shortest Path', 
+      tags: ['#DSA', '#Algorithms'],
+      host: 'Aryan Sharma', 
+      rating: '4.8 ★', 
+      participants: 12, 
+      capacity: 20,
+      duration: '45 min',
+      level: 'Intermediate'
+    },
+    { 
+      id: 2, 
+      title: 'React System Design', 
+      description: 'Component architecture and state management', 
+      tags: ['#WebDev', '#React'],
+      host: 'Riya Patel', 
+      rating: '4.9 ★', 
+      participants: 8, 
+      capacity: 15,
+      duration: '60 min',
+      level: 'Advanced'
+    },
+    { 
+      id: 3, 
+      title: 'MongoDB Aggregations', 
+      description: 'Deep dive into complex pipelines', 
+      tags: ['#MERN', '#Database'],
+      host: 'Kunal Verma', 
+      rating: '4.7 ★', 
+      participants: 15, 
+      capacity: 30,
+      duration: '90 min',
+      level: 'Intermediate'
+    }
   ];
 
-  const requests = [
-    { id: 1, peer: 'Sarah Jones', skill: 'Tailwind CSS', status: 'Pending' }
-  ];
+  const filters = ['All Topics', '#DSA', '#WebDev', '#MERN', '#AI_ML', '#SystemDesign', '#Cloud', '#DevOps', '#OpenSource'];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[var(--color-border)] pb-6">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 py-8">
+      
+      {/* Hero Section */}
+      <div className="flex flex-col gap-4 border-b border-[var(--color-border)] pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">Welcome back, Yashwant</h1>
-          <p className="text-[var(--color-text-secondary)]">Here's your learning overview for today.</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2 tracking-tight">Learn together. Build together.</h1>
+          <p className="text-[var(--color-text-secondary)] text-lg max-w-2xl">
+            Join live study rooms, pair with peers, solve problems, and level up your developer skills.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-lg text-sm font-semibold transition-colors">
-            Update Schedule
+        
+        <div className="flex items-center gap-4 mt-2">
+          <button onClick={() => navigate('/discover')} className="px-5 py-2.5 bg-[var(--color-bg-surface)] border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            Explore Sessions
+          </button>
+          <button onClick={() => navigate('/meeting')} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <Plus className="h-4 w-4" /> Create Study Room
           </button>
         </div>
+
+        <div className="flex items-center gap-2 mt-4">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-success)]"></span>
+          </span>
+          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+            <strong className="text-[var(--color-text-primary)]">42</strong> peers are learning right now
+          </span>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Active Sessions */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Upcoming Sessions</h2>
-              <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]">View all</button>
-            </div>
-            
-            <div className="grid sm:grid-cols-2 gap-4">
-              {upcomingSessions.map((session) => (
-                <div key={session.id} className="p-5 gfg-panel card-hover flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-[var(--color-accent-light)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-accent)] font-bold text-sm">
-                        {session.avatar}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[var(--color-text-primary)]">{session.peer}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{session.type === 'mentoring' ? 'You are mentoring' : 'You are learning'}</p>
-                      </div>
+      {/* Filters */}
+      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
+        {filters.map(filter => (
+          <button 
+            key={filter}
+            onClick={() => setActiveFilter(filter)}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+              activeFilter === filter 
+                ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)] border-[var(--color-accent-light)]' 
+                : 'bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-text-muted)]'
+            }`}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+
+      {/* Live Study Sessions */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Live Study Sessions</h2>
+        </div>
+        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {liveSessions.map((session) => (
+            <div key={session.id} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl p-5 flex flex-col justify-between card-hover shadow-sm">
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2 px-2.5 py-1 bg-green-50 text-green-700 rounded-md border border-green-100">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold tracking-wider uppercase">Live</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {session.tags.map(tag => (
+                      <span key={tag} className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] px-2 py-0.5 rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)] leading-tight mb-1">{session.title}</h3>
+                <p className="text-sm text-[var(--color-text-secondary)] mb-4">{session.description}</p>
+                
+                <div className="flex items-center justify-between text-sm mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center text-[var(--color-text-primary)] font-bold text-[10px]">
+                      {session.host.charAt(0)}
                     </div>
-                    <span className="px-2.5 py-1 rounded-md bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-xs font-semibold border border-[var(--color-border)]">
-                      {session.skill}
-                    </span>
+                    <span className="font-medium text-[var(--color-text-primary)]">{session.host}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] mb-4">
-                    <Clock className="h-4 w-4 text-[var(--color-accent)]" />
-                    <span>{session.time}</span>
-                  </div>
-                  
-                  <button className="w-full py-2 rounded-lg bg-[var(--color-accent-light)] text-[var(--color-accent)] border border-[var(--color-accent)] font-semibold text-sm hover:bg-[var(--color-accent)] hover:text-white transition-colors flex justify-center items-center gap-2">
-                    <Video className="h-4 w-4" /> Join Collab Room
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Skill Matrix */}
-          <section>
-            <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">Skill Matrix</h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="p-5 gfg-panel card-hover">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                    <Target className="h-4 w-4 text-emerald-500" />
-                  </div>
-                  <h3 className="font-bold text-[var(--color-text-primary)]">Skills I Teach</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['React', 'Node.js', 'MongoDB', 'Python'].map(skill => (
-                    <span key={skill} className="px-3 py-1 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-sm border border-[var(--color-border)]">
-                      {skill}
-                    </span>
-                  ))}
-                  <button className="px-3 py-1 rounded-full bg-transparent text-[var(--color-text-muted)] text-sm border border-[var(--color-border)] border-dashed hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors">
-                    + Add
-                  </button>
+                  <span className="text-[var(--color-warning)] font-medium text-xs bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-100">{session.rating}</span>
                 </div>
               </div>
-              
-              <div className="p-5 gfg-panel card-hover">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-8 w-8 rounded-lg bg-[var(--color-accent-light)] flex items-center justify-center border border-[var(--color-border)]">
-                    <Activity className="h-4 w-4 text-[var(--color-accent)]" />
+
+              <div>
+                <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-secondary)] mb-4 bg-[var(--color-bg-secondary)] px-3 py-2 rounded-lg">
+                  <span>{session.duration}</span>
+                  <span>·</span>
+                  <span>{session.level}</span>
+                  <span>·</span>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <span>{session.participants}/{session.capacity}</span>
                   </div>
-                  <h3 className="font-bold text-[var(--color-text-primary)]">Skills I Learn</h3>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {['Go', 'Kubernetes', 'System Design'].map(skill => (
-                    <span key={skill} className="px-3 py-1 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-sm border border-[var(--color-border)]">
-                      {skill}
-                    </span>
-                  ))}
-                  <button className="px-3 py-1 rounded-full bg-transparent text-[var(--color-text-muted)] text-sm border border-[var(--color-border)] border-dashed hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors">
-                    + Add
+                
+                <div className="flex items-center gap-3">
+                  <button onClick={() => navigate(`/session/${session.id}`)} className="flex-1 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2">
+                    Join Session <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <button className="px-3 py-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] rounded-lg text-sm font-medium transition-colors border border-transparent hover:border-[var(--color-border)]">
+                    Details
                   </button>
                 </div>
               </div>
             </div>
-          </section>
-
+          ))}
         </div>
+      </section>
 
-        {/* Sidebar Column */}
-        <div className="space-y-6">
-          
-          {/* Stats Card */}
-          <div className="p-5 gfg-panel">
-            <h3 className="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Your Progress</h3>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Flame className="h-5 w-5 text-orange-500" />
-                  <span className="text-[var(--color-text-primary)] font-medium">Active Streak</span>
-                </div>
-                <span className="font-bold text-orange-500">12 Days</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-[var(--color-accent)]" />
-                  <span className="text-[var(--color-text-primary)] font-medium">Sessions Completed</span>
-                </div>
-                <span className="font-bold text-[var(--color-text-primary)]">24</span>
-              </div>
-            </div>
-
-            {/* Heatmap mock */}
-            <div className="mt-6 pt-6 border-t border-[var(--color-border)]">
-              <div className="text-xs text-[var(--color-text-secondary)] mb-2 font-semibold">Activity Heatmap</div>
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({length: 28}).map((_, i) => (
-                  <div key={i} className={`aspect-square rounded-sm ${Math.random() > 0.6 ? 'bg-[var(--color-accent)]' : Math.random() > 0.3 ? 'bg-[var(--color-accent-light)] border border-[var(--color-accent)]' : 'bg-[var(--color-bg-tertiary)]'}`}></div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Requests */}
-          <div className="p-5 gfg-panel">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Mentorship Requests</h3>
-              <span className="bg-[var(--color-accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">1</span>
-            </div>
-            
-            {requests.map(req => (
-              <div key={req.id} className="p-3 rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] mb-2">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-bold text-[var(--color-text-primary)] text-sm">{req.peer}</span>
-                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">{req.status}</span>
-                </div>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-3">Wants to learn <span className="text-[var(--color-text-primary)] font-bold">{req.skill}</span></p>
-                <div className="flex gap-2">
-                  <button className="flex-1 py-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-md text-xs font-semibold transition-colors">Accept</button>
-                  <button className="flex-1 py-1.5 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:bg-[var(--color-border)] text-[var(--color-text-primary)] rounded-md text-xs font-semibold transition-colors">Decline</button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </div>
     </div>
   );
 };
 
 export default Dashboard;
+

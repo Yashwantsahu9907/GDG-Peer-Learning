@@ -1,23 +1,12 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Code, Search, Menu, User, Bell, Users } from 'lucide-react';
 import { getStoredUser } from '../utils/userClient';
-import { useTheme } from '../contexts/ThemeContext';
 
 const Navbar = () => {
-  const location = useLocation();
   const user = getStoredUser();
-  const { isDarkMode, toggleTheme } = useTheme();
   // Using a mock logged in state for demo purposes if user is not present
   const isLoggedIn = true; 
-  
-  const navLinks = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Discover', path: '/discover' },
-    { name: 'Bounties', path: '/bounties' },
-    { name: 'Leaderboard', path: '/leaderboard' },
-    { name: 'Collab Room', path: '/meeting' },
-  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-bg-primary)] border-b border-[var(--color-border)] shadow-sm">
@@ -29,67 +18,39 @@ const Navbar = () => {
                 <Code className="h-5 w-5 text-[var(--color-accent)]" />
               </div>
               <span className="font-bold text-xl tracking-tight text-[var(--color-text-primary)]">
-                GDG<span className="text-[var(--color-accent)]">Peer</span>
+                GDG Peer Study Hub
               </span>
             </Link>
+          </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-2">
-              {navLinks.map((link) => {
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.name}
-                    to={link.path}
-                    className={`px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                      isActive 
-                        ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]' 
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)]'
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                );
-              })}
+          <div className="flex-1 max-w-lg px-8 hidden lg:flex">
+            <div className="relative w-full group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)] group-focus-within:text-[var(--color-accent)] transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Search rooms, topics, peers..." 
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full pl-9 pr-12 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded px-1.5 py-0.5">⌘ K</span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="hidden lg:flex relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)] group-focus-within:text-[var(--color-accent)] transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search mentors, skills..." 
-                className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full pl-9 pr-4 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all w-48 focus:w-64"
-              />
-            </div>
-
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
-                {/* Stats Badges */}
-                <div className="hidden sm:flex items-center gap-2 mr-2">
-                  <div className="flex items-center gap-1.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full px-3 py-1">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">12</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full px-3 py-1">
-                    <Coins className="h-4 w-4 text-yellow-500" />
-                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">450</span>
-                  </div>
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-100 mr-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-xs font-medium">42 Peers Online</span>
                 </div>
 
-                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative">
+                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-full transition-colors relative">
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-accent)] border-2 border-[var(--color-bg-primary)]"></span>
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-error)] border-2 border-[var(--color-bg-primary)]"></span>
                 </button>
                 
                 <Link to="/profile" className="flex items-center gap-2 ml-1">
@@ -111,7 +72,6 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* Mobile menu button */}
             <button className="md:hidden p-2 text-[var(--color-text-secondary)]">
               <Menu className="h-6 w-6" />
             </button>
@@ -123,3 +83,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
