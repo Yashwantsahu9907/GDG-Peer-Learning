@@ -8,6 +8,8 @@ const Landing = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let interval;
+
     const fetchStats = async () => {
       try {
         const res = await fetch('http://localhost:5000/api/stats');
@@ -16,12 +18,14 @@ const Landing = () => {
           setActivePeers(data.activePeers);
         }
       } catch (err) {
-        console.error('[API Error] Failed to fetch stats:', err);
+        // Suppress console error if backend is not running during UI testing
+        // and stop polling to prevent console spam
+        if (interval) clearInterval(interval);
       }
     };
     fetchStats();
     
-    const interval = setInterval(fetchStats, 10000);
+    interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 
