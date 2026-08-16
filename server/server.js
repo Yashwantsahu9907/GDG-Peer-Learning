@@ -3,8 +3,10 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import User from './models/User.js';
+import authRoutes from './routes/authRoutes.js';
 
 // Connect to database
 connectDB();
@@ -16,7 +18,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true,
   }
 });
 
@@ -26,6 +29,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // Socket.io Connection
 io.on('connection', async (socket) => {

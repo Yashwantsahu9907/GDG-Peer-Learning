@@ -8,27 +8,36 @@ import Bounties from './pages/Bounties';
 import Leaderboard from './pages/Leaderboard';
 import Meeting from './pages/Meeting';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Profile from './pages/Profile';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Landing />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="discover" element={<Discover />} />
-            <Route path="bounties" element={<Bounties />} />
-            <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="meeting" element={<Meeting />} />
-            <Route path="login" element={<Login />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Landing />} />
+              <Route path="discover" element={<Discover />} />
+              <Route path="bounties" element={<Bounties />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="login" element={<Login />} />
+              <Route path="register" element={<Register />} />
+              
+              <Route element={<ProtectedRoute />}>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="meeting" element={<Meeting />} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

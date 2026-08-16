@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getStoredUser, setStoredUser } from '../utils/userClient';
+import { useAuth } from '../contexts/AuthContext';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('');
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -14,65 +16,104 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${encodeURIComponent(userId)}`);
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        setError(data.message || 'Unable to find user. Please check your ID.');
+        setError(data.message || 'Invalid credentials');
         setLoading(false);
         return;
       }
 
-      const user = data.user;
-      setStoredUser({ userId: user.userId, name: user.name });
-      navigate('/');
+      login(data.user);
+      navigate('/dashboard');
     } catch (fetchError) {
       setError('Server error while trying to log in.');
       setLoading(false);
     }
   };
 
-  const storedUser = getStoredUser();
-  if (storedUser?.userId) {
-    navigate('/');
-    return null;
-  }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-      <h1 className="text-3xl font-bold text-slate-900 mb-6">Login</h1>
-      <p className="text-slate-600 mb-8">Enter your user ID to log in or create a new account on the signup page.</p>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="userId" className="block text-sm font-medium text-slate-700 mb-2">
-            User ID
-          </label>
-          <input
-            id="userId"
-            type="text"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            placeholder="Enter your unique user ID"
-            required
-          />
+    <div className="w-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-[var(--color-text-primary)]">
+          Sign in to your account
+        </h2>
+        <p className="mt-2 text-center text-sm text-[var(--color-text-secondary)]">
+          Or{' '}
+          <Link to="/register" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors">
+            create a new account
+          </Link>
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="gfg-panel py-8 px-4 sm:rounded-2xl sm:px-10 border border-[var(--color-border)] shadow-sm">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+                Email address
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-[var(--color-text-muted)]" />
+                </div>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] block w-full pl-10 sm:text-sm border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-md py-2 px-3 focus:outline-none focus:ring-1 transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+                Password
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-[var(--color-text-muted)]" />
+                </div>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] block w-full pl-10 sm:text-sm border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-md py-2 px-3 focus:outline-none focus:ring-1 transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-accent)] focus:ring-offset-[var(--color-bg-primary)] disabled:opacity-50 group transition-colors"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+                {!loading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+              </button>
+            </div>
+          </form>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
-        >
-          {loading ? 'Logging in…' : 'Log In'}
-        </button>
-      </form>
-      <p className="mt-6 text-sm text-slate-600">
-        Don’t have an account?{' '}
-        <Link to="/signup" className="text-indigo-600 hover:text-indigo-700 font-semibold">
-          Sign up here
-        </Link>
-        .
-      </p>
+      </div>
     </div>
   );
 };
