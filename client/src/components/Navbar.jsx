@@ -1,15 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon } from 'lucide-react';
-import { getStoredUser } from '../utils/userClient';
+import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
   const location = useLocation();
-  const user = getStoredUser();
   const { isDarkMode, toggleTheme } = useTheme();
-  // Using a mock logged in state for demo purposes if user is not present
-  const isLoggedIn = true; 
+  const { user, logout } = useAuth();
+  const isLoggedIn = !!user;
   
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard' },
@@ -83,7 +82,7 @@ const Navbar = () => {
                   </div>
                   <div className="flex items-center gap-1.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full px-3 py-1">
                     <Coins className="h-4 w-4 text-yellow-500" />
-                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">450</span>
+                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">{user.gdgCoins || 100}</span>
                   </div>
                 </div>
 
@@ -99,13 +98,17 @@ const Navbar = () => {
                     </div>
                   </div>
                 </Link>
+
+                <button onClick={logout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Log Out">
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <Link to="/login" className="text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors">
                   Log in
                 </Link>
-                <Link to="/signup" className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white text-sm font-medium px-4 py-1.5 rounded-full transition-colors">
+                <Link to="/register" className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white text-sm font-medium px-4 py-1.5 rounded-full transition-colors">
                   Sign up
                 </Link>
               </div>
