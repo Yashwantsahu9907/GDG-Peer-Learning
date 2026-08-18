@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, CalendarDays, ExternalLink, Flame } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Leaderboard = () => {
-  // Mock Data
-  const topMentors = [
-    { rank: 1, name: 'Alice Chen', score: 2450, streak: 45, badges: ['Top Mentor', 'React Pro'], avatar: 'AC' },
-    { rank: 2, name: 'David Kumar', score: 2100, streak: 30, badges: ['Algorithm Expert'], avatar: 'DK' },
-    { rank: 3, name: 'Michael Lee', score: 1850, streak: 12, badges: ['Backend Ninja'], avatar: 'ML' },
-    { rank: 4, name: 'Sarah Jones', score: 1600, streak: 8, badges: ['UI Designer'], avatar: 'SJ' },
-    { rank: 5, name: 'Yashwant Sahu', score: 1450, streak: 12, badges: ['Rising Star'], avatar: 'YS' },
-  ];
+  const [topMentors, setTopMentors] = useState([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/leaderboard`);
+        const data = await res.json();
+        if (data.success) {
+          const formatted = data.leaderboard.map((m, i) => ({
+            rank: i + 1,
+            name: m.name,
+            score: m.gdgCoins,
+            streak: Math.floor(Math.random() * 20) + 1, // Mock streak
+            badges: [m.role === 'Mentor' ? 'Top Mentor' : 'Contributor'],
+            avatar: m.name.substring(0, 2).toUpperCase(),
+          }));
+          setTopMentors(formatted);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
 
   const upcomingEvents = [
     { id: 1, title: 'GDG Web Dev Bootcamp', date: 'Aug 15, 2026', type: 'Workshop' },
@@ -41,14 +59,14 @@ const Leaderboard = () => {
             <div className="col-span-7 sm:col-span-5">Peer</div>
             <div className="col-span-3 sm:col-span-2 text-center">Streak</div>
             <div className="hidden sm:block col-span-3">Badges</div>
-            <div className="col-span-3 sm:col-span-1 text-right">Score</div>
+            <div className="col-span-3 sm:col-span-1 text-right">Coins</div>
           </div>
 
           <div className="divide-y divide-[var(--color-border)]">
             {topMentors.map((mentor, index) => (
               <div 
                 key={index} 
-                className={`grid grid-cols-12 gap-4 p-4 items-center transition-colors ${mentor.name === 'Yashwant Sahu' ? 'bg-[var(--color-accent-light)] border-l-4 border-l-[var(--color-accent)]' : 'hover:bg-[var(--color-bg-tertiary)]'}`}
+                className={`grid grid-cols-12 gap-4 p-4 items-center transition-colors ${user?.name === mentor.name ? 'bg-[var(--color-accent-light)] border-l-4 border-l-[var(--color-accent)]' : 'hover:bg-[var(--color-bg-tertiary)]'}`}
               >
                 <div className="col-span-2 sm:col-span-1 flex justify-center">
                   {getRankIcon(mentor.rank)}
@@ -60,7 +78,7 @@ const Leaderboard = () => {
                   </div>
                   <div>
                     <div className="font-bold text-[var(--color-text-primary)]">{mentor.name}</div>
-                    {mentor.name === 'Yashwant Sahu' && <div className="text-xs font-semibold text-[var(--color-accent)]">You</div>}
+                    {user?.name === mentor.name && <div className="text-xs font-semibold text-[var(--color-accent)]">You</div>}
                   </div>
                 </div>
 
@@ -82,6 +100,11 @@ const Leaderboard = () => {
                 </div>
               </div>
             ))}
+            {topMentors.length === 0 && (
+              <div className="p-8 text-center text-[var(--color-text-muted)]">
+                Loading leaderboard...
+              </div>
+            )}
           </div>
         </div>
       </div>

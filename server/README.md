@@ -1,36 +1,45 @@
-# Security Measures Implementation
+# GDG Peer Learning Platform - Backend Architecture
 
 ## Overview
-This document outlines the security measures implemented for the Authentication and Authorization system in the GDG Peer Learning full-stack MERN application.
+This backend powers the GDG Peer Learning full-stack application. Built with Node.js and Express, it provides secure authentication, real-time collaboration via WebSockets/WebRTC, and a comprehensive REST API for gamification (coins, bounties) and matchmaking.
 
-## Technologies Used
+## Core Technologies & Packages
+- **Express.js**: REST API framework.
+- **Mongoose / MongoDB**: NoSQL database for flexible document schemas.
+- **bcryptjs**: Used for securely hashing user passwords before storing them in the database.
+- **jsonwebtoken (JWT)**: Generates secure access tokens to verify user identity without maintaining server-side session state.
+- **cookie-parser**: Parses HTTP-only cookies containing JWTs, preventing XSS attacks from accessing the tokens via `document.cookie`.
+- **Socket.io**: Enables real-time, bi-directional event emission. Crucial for live syncing Monaco Editor (`@monaco-editor/react`) code changes, Whiteboard events, and WebRTC signaling (offers, answers, ICE candidates).
+- **Firebase / Google OAuth**: Used for validating 1-Click Sign-In via Google.
 
-### 1. `bcryptjs`
-- **Purpose**: Used for hashing user passwords before storing them in the database.
-- **Why it was chosen**: Storing passwords in plain text is a critical security vulnerability. If the database is compromised, attackers can easily view user passwords. `bcryptjs` uses a salt and a hashing algorithm to encrypt the password, making it computationally expensive and resistant to brute-force and dictionary attacks. We use 10 salt rounds to provide a good balance between security and performance.
+## Security Architecture
+### Authentication Flow
+We use a unified dual-auth system:
+1. **Manual Form**: Requires Name, Email, Password, etc. Passwords are never stored in plaintext; they are hashed via `bcryptjs`.
+2. **Google 1-Click Sign-In**: Uses Firebase on the frontend to retrieve a Google profile, which is sent to the backend to instantly register or log in the user, auto-generating a secure random password if they are new.
 
-### 2. `jsonwebtoken` (JWT)
-- **Purpose**: Used for securely transmitting information between the client and the server as a JSON object, specifically for authorization.
-- **Why it was chosen**: JWT is stateless, meaning the server doesn't need to store session data in the database, reducing database load. The token is signed using a secret key, ensuring that it hasn't been tampered with. The token includes the user's ID and role, allowing the server to quickly authorize protected route access.
+### HTTP-Only JWT Cookies vs LocalStorage
+For maximum security, this application explicitly avoids storing sensitive auth tokens in `localStorage`. 
+- **The Problem with LocalStorage**: Any malicious JavaScript running on the client can read `localStorage`, making it highly vulnerable to Cross-Site Scripting (XSS).
+- **The Solution (HTTP-Only Cookies)**: Upon successful login, the server sets a `jwt` cookie with the `httpOnly: true` flag. This prevents client-side JS from accessing it. The browser automatically attaches this cookie to subsequent API requests (if `credentials: 'include'` is set), keeping auth completely secure from XSS.
 
-### 3. `cookie-parser`
-- **Purpose**: Used to parse cookies attached to the client request object.
-- **Why it was chosen**: It allows the Express server to easily read the HTTP-only cookies where the JWT is stored, which is required for our `isAuth` middleware to function properly.
+## Database Schemas
 
-## Implementation Details
+### User Schema (`User.js`)
+- `name` (String, required)
+- `email` (String, required, unique)
+- `password` (String, required, hashed)
+- `role` (Enum: Student, Mentor, Admin)
+- `gdgCoins` (Number, default: 100) - For the Gamification Economy.
+- Academic fields: `enrollmentNumber`, `branch`, `semester`.
 
-### HTTP-Only Cookies vs. LocalStorage
-We store the JWT in an **HTTP-only, secure, and SameSite** cookie rather than LocalStorage. 
-- **XSS Protection**: LocalStorage is accessible via JavaScript. If our application has a Cross-Site Scripting (XSS) vulnerability, an attacker can steal the token from LocalStorage. HTTP-only cookies cannot be accessed via JavaScript, providing strong protection against XSS token theft.
-- **CSRF Protection**: By setting the cookie attribute `sameSite: 'strict'`, we instruct the browser to only send the cookie with requests originating from the same site. This prevents Cross-Site Request Forgery (CSRF) attacks.
-- **Secure Flag**: In production, the cookie is marked as `secure`, ensuring it is only transmitted over encrypted HTTPS connections.
+### Bounty Schema (`Bounty.js`)
+- `title`, `description`, `coins` (Number, reward amount)
+- `author` (ObjectId, ref: User)
+- `status` (Enum: Open, Solved)
+- `solver` (ObjectId, ref: User)
 
-### Middleware
-
-1. **`isAuth` (Authentication)**: This middleware intercepts requests to protected endpoints. It extracts the JWT from the HTTP-only cookie, verifies its signature using the secret key, and attaches the decoded user payload to `req.user`. If the token is missing or invalid, it rejects the request with a 401 Unauthorized status.
-2. **`hasRole` (Authorization)**: This middleware is used alongside `isAuth` to restrict endpoints to specific user roles (e.g., 'Admin', 'Mentor'). It checks the `role` property on `req.user` against an array of allowed roles.
-
-### Frontend Security
-- The React frontend uses a Context API (`AuthContext`) to manage the global authentication state without directly accessing the token.
-- Protected routes are guarded by a `ProtectedRoute` component that checks the `AuthContext`. If the user is unauthenticated, they are seamlessly redirected to the `/login` page.
-- Forms include client-side validation (e.g., password length checks) before sending data to the server to reduce unnecessary backend load and improve user experience.
+## Core Systems
+1. **Real-time Collaboration (`/session/:id`)**: Uses Socket.io to sync live code diffs and handle WebRTC peer-to-peer video/audio connections.
+2. **Gamification & Coins**: Users receive a 100-coin bonus on registration. They can spend coins to post doubt Bounties, and earn coins by solving Bounties for peers.
+3. **Smart Matchmaking**: The frontend dynamically searches and filters peers based on skills taught vs skills wanted.

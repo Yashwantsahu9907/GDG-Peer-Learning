@@ -13,11 +13,14 @@ import Profile from './pages/Profile';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
+import Session from './pages/Session';
 
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+        <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
@@ -30,6 +33,7 @@ function App() {
               
               <Route element={<ProtectedRoute />}>
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="session/:id" element={<Session />} />
                 <Route path="meeting" element={<Meeting />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
