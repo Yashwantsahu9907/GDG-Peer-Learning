@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut } from 'lucide-react';
+import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,9 +9,21 @@ const Navbar = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   const navLinks = [
-    { name: 'Dashboard', path: '/dashboard' },
+    ...(isLoggedIn ? [{ name: 'Dashboard', path: '/dashboard' }] : []),
     { name: 'Discover', path: '/discover' },
     { name: 'Bounties', path: '/bounties' },
     { name: 'Leaderboard', path: '/leaderboard' },
@@ -91,17 +103,57 @@ const Navbar = () => {
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-accent)] border-2 border-[var(--color-bg-primary)]"></span>
                 </button>
                 
-                <Link to="/profile" className="flex items-center gap-2 ml-1">
-                  <div className="h-8 w-8 rounded-full bg-[var(--color-accent)] p-0.5">
-                    <div className="h-full w-full rounded-full bg-[var(--color-bg-primary)] flex items-center justify-center">
-                      <User className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                {/* Profile Dropdown */}
+                <div className="relative ml-1" ref={dropdownRef}>
+                  <button 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center gap-2 focus:outline-none"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-[var(--color-accent)] p-0.5 hover:scale-105 transition-transform cursor-pointer">
+                      <div className="h-full w-full rounded-full bg-[var(--color-bg-primary)] flex items-center justify-center">
+                        <User className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                    <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)] hidden sm:block" />
+                  </button>
 
-                <button onClick={logout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Log Out">
-                  <LogOut className="h-5 w-5" />
-                </button>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-56 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-2xl py-2 z-50 transform origin-top-right transition-all">
+                      <div className="px-4 py-3 border-b border-[var(--color-border)]">
+                        <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{user.name || 'User'}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)] truncate mt-0.5">{user.email || ''}</p>
+                        <div className="flex items-center gap-1.5 mt-2 bg-[var(--color-bg-secondary)] rounded-lg px-2 py-1.5 w-fit">
+                          <Coins className="h-3.5 w-3.5 text-yellow-500" />
+                          <span className="text-xs font-semibold text-[var(--color-text-primary)]">{user.gdgCoins || 100} Coins</span>
+                        </div>
+                      </div>
+                      
+                      <div className="py-1">
+                        <Link 
+                          to="/dashboard" 
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
+                          My Dashboard
+                        </Link>
+                      </div>
+                      
+                      <div className="py-1 border-t border-[var(--color-border)]">
+                        <button 
+                          onClick={() => {
+                            setIsDropdownOpen(false);
+                            logout();
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-[var(--color-bg-secondary)] hover:text-red-400 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-3">
