@@ -32,7 +32,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
+import bountyRoutes from './routes/bountyRoutes.js';
+
 app.use('/api/auth', authRoutes);
+app.use('/api', bountyRoutes);
 
 // Socket.io Connection
 io.on('connection', async (socket) => {

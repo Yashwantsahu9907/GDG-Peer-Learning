@@ -100,3 +100,50 @@ export const getMe = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { name, email, googleId, photoURL } = req.body;
+    let user = await User.findOne({ email });
+
+    if (user) {
+      generateToken(res, user._id, user.role);
+      res.status(200).json({
+        success: true,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          gdgCoins: user.gdgCoins,
+        },
+      });
+    } else {
+      // Create new user with default random password since they use Google
+      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      user = await User.create({
+        name,
+        email,
+        password: randomPassword,
+        phone: 'Not Provided',
+        gender: 'Other',
+        branch: 'OTHER',
+        semester: '1',
+      });
+
+      generateToken(res, user._id, user.role);
+      res.status(201).json({
+        success: true,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          gdgCoins: user.gdgCoins,
+        },
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
