@@ -1,5 +1,8 @@
 import React from 'react';
 import { Calendar, Video, Clock, CheckCircle2, ChevronRight, Activity, Flame, Target } from 'lucide-react';
+import StudentDetails from '../components/dashboard/StudentDetails';
+import ProfileSummary from '../components/dashboard/ProfileSummary';
+import CurrentStreak from "../components/dashboard/CurrentStreak";
 
 const Dashboard = () => {
   // Mock Data
@@ -26,6 +29,10 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+      <StudentDetails />
+      <ProfileSummary />
+      <CurrentStreak />
+    
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Content Column */}
