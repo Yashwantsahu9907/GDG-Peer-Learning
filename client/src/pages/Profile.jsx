@@ -105,6 +105,9 @@ const Profile = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editBioText, setEditBioText] = useState("");
+  const [editWebsiteText, setEditWebsiteText] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -128,9 +131,17 @@ const Profile = () => {
           if (user.gdgCoins !== undefined) {
             profileData.stats.gdgCoins = user.gdgCoins;
           }
+          if (user.bio !== undefined && user.bio !== null && user.bio !== '') {
+            profileData.basicInfo.bio = user.bio;
+          }
+          if (user.website !== undefined) {
+            profileData.basicInfo.website = user.website;
+          }
         }
         
         setData(profileData);
+        setEditBioText(profileData.basicInfo.bio);
+        setEditWebsiteText(profileData.basicInfo.website);
       } catch (err) {
         console.error("Failed to load profile", err);
       } finally {
@@ -139,6 +150,28 @@ const Profile = () => {
     };
     loadData();
   }, [user]);
+
+  const handleSaveBio = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ bio: editBioText, website: editWebsiteText })
+      });
+      if (res.ok) {
+        setIsEditingBio(false);
+        setData({
+          ...data,
+          basicInfo: { ...data.basicInfo, bio: editBioText, website: editWebsiteText }
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) {
     return (
@@ -204,25 +237,59 @@ const Profile = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-5 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl font-semibold hover:border-[var(--color-accent)] transition-colors flex items-center gap-2">
-                  <Edit3 className="w-4 h-4" /> Edit Profile
-                </button>
+                {isEditingBio ? (
+                  <button 
+                    onClick={handleSaveBio}
+                    className="px-5 py-2.5 bg-[var(--color-accent)] text-white rounded-xl font-semibold hover:bg-[var(--color-accent-dark)] transition-colors flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Save Profile
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setIsEditingBio(true)}
+                    className="px-5 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl font-semibold hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" /> Edit Profile
+                  </button>
+                )}
                 <button className="p-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl hover:border-[var(--color-accent)] transition-colors">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <p className="text-[var(--color-text-primary)] text-lg leading-relaxed max-w-3xl mb-6">
-              {data.basicInfo.bio}
-            </p>
+            {isEditingBio ? (
+              <textarea 
+                className="w-full max-w-3xl mb-6 p-4 rounded-xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] text-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
+                rows={3}
+                value={editBioText}
+                onChange={(e) => setEditBioText(e.target.value)}
+              />
+            ) : (
+              <p className="text-[var(--color-text-primary)] text-lg leading-relaxed max-w-3xl mb-6 whitespace-pre-wrap">
+                {data.basicInfo.bio}
+              </p>
+            )}
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[var(--color-text-secondary)] font-medium">
               <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {data.basicInfo.location}</div>
               <div className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {data.basicInfo.college}</div>
               <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.department}</div>
               <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.year}</div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
+              {isEditingBio ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] border border-[var(--color-accent)] transition-colors">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <input 
+                    type="text" 
+                    placeholder="Website URL"
+                    className="bg-transparent focus:outline-none text-xs w-32"
+                    value={editWebsiteText}
+                    onChange={(e) => setEditWebsiteText(e.target.value)}
+                  />
+                </div>
+              ) : data.basicInfo.website ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
+              ) : null}
               <div className="flex items-center gap-4 ml-auto">
                 <GithubIcon className="w-5 h-5 hover:text-[var(--color-text-primary)] cursor-pointer transition-colors" />
                 <LinkedinIcon className="w-5 h-5 hover:text-[#0a66c2] cursor-pointer transition-colors" />
