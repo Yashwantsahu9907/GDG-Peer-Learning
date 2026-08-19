@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft } from 'lucide-react';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ChatWidget = ({ user, onClose }) => {
   const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'
@@ -69,7 +70,7 @@ const ChatWidget = ({ user, onClose }) => {
     if (!user) return;
 
     // Fetch Global Chat
-    fetch(`${SOCKET_URL}/api/chat/global`)
+    fetch(`${API_URL}/chat/global`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setGlobalMessages(data.messages);
@@ -77,7 +78,7 @@ const ChatWidget = ({ user, onClose }) => {
       .catch(err => console.error(err));
 
     // Fetch Contacts
-    fetch(`${SOCKET_URL}/api/chat/contacts/${user._id}`)
+    fetch(`${API_URL}/chat/contacts/${user._id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setContacts(data.contacts);
@@ -88,7 +89,7 @@ const ChatWidget = ({ user, onClose }) => {
   // Fetch Personal Messages when a contact is selected
   useEffect(() => {
     if (activeTab === 'personal' && selectedContact) {
-      fetch(`${SOCKET_URL}/api/chat/personal/${user._id}/${selectedContact.userId}`)
+      fetch(`${API_URL}/chat/personal/${user._id}/${selectedContact.userId}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) setPersonalMessages(data.messages);
