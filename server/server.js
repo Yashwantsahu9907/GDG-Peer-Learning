@@ -41,16 +41,9 @@ app.use('/api', bountyRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Socket.io Connection
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
   const { userId } = socket.handshake.auth || {};
   const displayId = userId || socket.id;
-
-  if (userId) {
-    // Join personal room for direct messages
-    socket.join(userId);
-    const user = await User.findById(userId);
-    console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
-  }
 
   // Global Chat
   socket.on('join_global', () => {
@@ -70,6 +63,18 @@ io.on('connection', async (socket) => {
       console.error('Error saving global message:', err);
     }
   });
+
+  // Async DB check for user connection logging & personal room
+  if (userId) {
+    socket.join(userId);
+    User.findById(userId).then(user => {
+      if (user) {
+        console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
+      }
+    }).catch(err => {
+      console.error('Socket connection DB error:', err);
+    });
+  }
 
   // Personal Chat
   socket.on('send_personal_message', async (data) => {
