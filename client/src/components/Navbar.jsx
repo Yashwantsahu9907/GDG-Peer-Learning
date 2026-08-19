@@ -23,7 +23,6 @@ const Navbar = () => {
   }, []);
   
   const navLinks = [
-    ...(isLoggedIn ? [{ name: 'Dashboard', path: '/dashboard' }] : []),
     { name: 'Discover', path: '/discover' },
     { name: 'Bounties', path: '/bounties' },
     { name: 'Leaderboard', path: '/leaderboard' },
@@ -130,12 +129,12 @@ const Navbar = () => {
                       
                       <div className="py-1">
                         <Link 
-                          to="/dashboard" 
+                          to="/profile" 
                           onClick={() => setIsDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group"
                         >
-                          <LayoutDashboard className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-                          My Dashboard
+                          <User className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
+                          My Profile
                         </Link>
                       </div>
                       
