@@ -110,7 +110,26 @@ const Profile = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const profileData = await fetchProfileData(user?.userId || 'me');
+        // In a real app, this would fetch from /api/users/${userId}
+        const profileData = await fetchProfileData(user?._id || 'me');
+        
+        // Merge actual user data if available
+        if (user) {
+          profileData.basicInfo.name = user.name || profileData.basicInfo.name;
+          if (user.email) {
+            profileData.basicInfo.username = `@${user.email.split('@')[0]}`;
+          }
+          if (user.branch) {
+            profileData.basicInfo.department = user.branch;
+          }
+          if (user.semester) {
+            profileData.basicInfo.year = `Semester ${user.semester}`;
+          }
+          if (user.gdgCoins !== undefined) {
+            profileData.stats.gdgCoins = user.gdgCoins;
+          }
+        }
+        
         setData(profileData);
       } catch (err) {
         console.error("Failed to load profile", err);
@@ -201,6 +220,8 @@ const Profile = () => {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[var(--color-text-secondary)] font-medium">
               <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {data.basicInfo.location}</div>
               <div className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {data.basicInfo.college}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.department}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.year}</div>
               <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
               <div className="flex items-center gap-4 ml-auto">
                 <GithubIcon className="w-5 h-5 hover:text-[var(--color-text-primary)] cursor-pointer transition-colors" />
@@ -214,12 +235,15 @@ const Profile = () => {
         {/* 2. Social Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mt-10 pt-6 border-t border-[var(--color-border)] relative z-10">
           <div className="cursor-pointer group">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.followers}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Followers</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.gdgCoins || 0}</p>
+              <Award className="w-5 h-5 text-[var(--color-accent)]" />
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">GDG Coins</p>
           </div>
           <div className="cursor-pointer group">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.following}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Following</p>
+            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.followers}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Followers</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.peersHelped}</p>
