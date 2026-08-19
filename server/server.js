@@ -33,6 +33,10 @@ app.use(cookieParser());
 
 // Routes
 import bountyRoutes from './routes/bountyRoutes.js';
+import executeRoutes from './routes/executeRoutes.js';
+app.use('/api/auth', authRoutes);
+app.use('/api/bounties', bountyRoutes);
+app.use('/api', executeRoutes);
 // Socket.io Connection
 io.on('connection', (socket) => {
   const { userId } = socket.handshake.auth || {};
