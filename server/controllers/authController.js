@@ -163,3 +163,33 @@ export const googleAuth = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { bio, website } = req.body;
+    const user = await User.findById(req.user.userId);
+    
+    if (user) {
+      if (bio !== undefined) user.bio = bio;
+      if (website !== undefined) user.website = website;
+      
+      const updatedUser = await user.save();
+      res.status(200).json({
+        success: true,
+        user: {
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          gdgCoins: updatedUser.gdgCoins,
+          bio: updatedUser.bio,
+          website: updatedUser.website,
+        },
+      });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
