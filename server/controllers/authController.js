@@ -14,6 +14,25 @@ const generateToken = (res, userId, role) => {
   });
 };
 
+const handleDailyLoginReward = async (user) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  if (!user.lastLoginDate || user.lastLoginDate < today) {
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $inc: { gdgCoins: 1 },
+        $set: { lastLoginDate: today }
+      }
+    );
+    user.gdgCoins = (user.gdgCoins || 0) + 1;
+    user.lastLoginDate = today;
+    return true;
+  }
+  return false;
+};
+
 export const register = async (req, res) => {
   try {
     const { name, email, password, phone, gender, enrollmentNumber, branch, semester } = req.body;
@@ -61,6 +80,7 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.comparePassword(password))) {
+      await handleDailyLoginReward(user);
       generateToken(res, user._id, user.role);
       res.status(200).json({
         success: true,
@@ -92,6 +112,7 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
     if (user) {
+      await handleDailyLoginReward(user);
       res.status(200).json({ success: true, user });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
@@ -123,6 +144,7 @@ export const googleAuth = async (req, res) => {
     let user = await User.findOne({ email });
 
     if (user) {
+      await handleDailyLoginReward(user);
       generateToken(res, user._id, user.role);
       res.status(200).json({
         success: true,
