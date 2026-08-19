@@ -20,7 +20,7 @@ const ChatWidget = ({ user, onClose }) => {
     if (!user) return;
     
     const newSocket = io(SOCKET_URL, {
-      auth: { userId: user.userId }
+      auth: { userId: user._id }
     });
     
     setSocket(newSocket);
@@ -45,7 +45,7 @@ const ChatWidget = ({ user, onClose }) => {
       
       // Also update contacts list to show latest message
       setContacts((prev) => {
-        const otherId = msg.senderId === user.userId ? msg.receiverId : msg.senderId;
+        const otherId = msg.senderId === user._id ? msg.receiverId : msg.senderId;
         const exists = prev.find(c => c.userId === otherId);
         if (exists) {
           return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, timestamp: msg.timestamp } : c);
@@ -53,7 +53,7 @@ const ChatWidget = ({ user, onClose }) => {
           // Add new contact
           return [{
             userId: otherId,
-            name: msg.senderId === user.userId ? 'Unknown' : msg.senderName,
+            name: msg.senderId === user._id ? 'Unknown' : msg.senderName,
             lastMessage: msg.text,
             timestamp: msg.timestamp
           }, ...prev];
@@ -77,7 +77,7 @@ const ChatWidget = ({ user, onClose }) => {
       .catch(err => console.error(err));
 
     // Fetch Contacts
-    fetch(`${SOCKET_URL}/api/chat/contacts/${user.userId}`)
+    fetch(`${SOCKET_URL}/api/chat/contacts/${user._id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setContacts(data.contacts);
@@ -88,7 +88,7 @@ const ChatWidget = ({ user, onClose }) => {
   // Fetch Personal Messages when a contact is selected
   useEffect(() => {
     if (activeTab === 'personal' && selectedContact) {
-      fetch(`${SOCKET_URL}/api/chat/personal/${user.userId}/${selectedContact.userId}`)
+      fetch(`${SOCKET_URL}/api/chat/personal/${user._id}/${selectedContact.userId}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) setPersonalMessages(data.messages);
@@ -108,13 +108,13 @@ const ChatWidget = ({ user, onClose }) => {
 
     if (activeTab === 'global') {
       socket.emit('send_global_message', {
-        senderId: user.userId,
+        senderId: user._id,
         senderName: user.name,
         text: inputMessage
       });
     } else if (activeTab === 'personal' && selectedContact) {
       socket.emit('send_personal_message', {
-        senderId: user.userId,
+        senderId: user._id,
         senderName: user.name,
         receiverId: selectedContact.userId,
         text: inputMessage
@@ -137,12 +137,12 @@ const ChatWidget = ({ user, onClose }) => {
   // To properly filter personal messages for the current view:
   const currentPersonalMsgs = personalMessages.filter(msg => 
     selectedContact && 
-    ((msg.senderId === user.userId && msg.receiverId === selectedContact.userId) || 
-     (msg.senderId === selectedContact.userId && msg.receiverId === user.userId))
+    ((msg.senderId === user._id && msg.receiverId === selectedContact.userId) || 
+     (msg.senderId === selectedContact.userId && msg.receiverId === user._id))
   );
 
   return (
-    <div className="absolute right-0 top-12 w-80 sm:w-96 h-[500px] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50">
+    <div className="absolute right-0 top-12 w-[90vw] sm:w-96 h-[500px] max-h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
         {activeTab === 'personal' ? (
@@ -183,9 +183,9 @@ const ChatWidget = ({ user, onClose }) => {
         {activeTab === 'global' && (
           <div className="flex flex-col gap-4">
             {globalMessages.map((msg, idx) => (
-              <div key={idx} className={`flex flex-col ${msg.senderId === user.userId ? 'items-end' : 'items-start'}`}>
+              <div key={idx} className={`flex flex-col ${msg.senderId === user._id ? 'items-end' : 'items-start'}`}>
                 <span className="text-[10px] text-[var(--color-text-muted)] ml-1 mb-1">{msg.senderName} • {formatTime(msg.timestamp)}</span>
-                <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user.userId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user._id ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                   {msg.text}
                 </div>
               </div>
@@ -229,9 +229,9 @@ const ChatWidget = ({ user, onClose }) => {
                <div className="text-center text-[var(--color-text-muted)] text-sm mt-10">Say hi to {selectedContact?.name}!</div>
              ) : (
                currentPersonalMsgs.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.senderId === user.userId ? 'items-end' : 'items-start'}`}>
+                <div key={idx} className={`flex flex-col ${msg.senderId === user._id ? 'items-end' : 'items-start'}`}>
                   <span className="text-[10px] text-[var(--color-text-muted)] ml-1 mb-1">{formatTime(msg.timestamp)}</span>
-                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user.userId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user._id ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                     {msg.text}
                   </div>
                 </div>

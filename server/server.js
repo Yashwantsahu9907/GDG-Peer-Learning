@@ -48,7 +48,7 @@ io.on('connection', async (socket) => {
   if (userId) {
     // Join personal room for direct messages
     socket.join(userId);
-    const user = await User.findOne({ userId });
+    const user = await User.findById(userId);
     console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
   }
 

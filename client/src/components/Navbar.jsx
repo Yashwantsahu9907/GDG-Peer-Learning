@@ -115,12 +115,12 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative hidden sm:block">
+                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative">
                   <Bell className="h-5 w-5" />
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-accent)] border-2 border-[var(--color-bg-primary)]"></span>
                 </button>
                 
-                <div className="relative hidden sm:block">
+                <div className="relative">
                   <button 
                     onClick={() => setIsChatOpen(!isChatOpen)}
                     className={`p-2 transition-colors relative rounded-full ${isChatOpen ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)]'}`}
