@@ -33,9 +33,12 @@ app.use(cookieParser());
 
 // Routes
 import bountyRoutes from './routes/bountyRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import Message from './models/Message.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api', bountyRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Socket.io Connection
 io.on('connection', async (socket) => {
@@ -43,11 +46,48 @@ io.on('connection', async (socket) => {
   const displayId = userId || socket.id;
 
   if (userId) {
+    // Join personal room for direct messages
+    socket.join(userId);
     const user = await User.findOne({ userId });
-    console.log(`User connected: socketId=${socket.id} userId=${displayId} ${user ? '(found)' : '(unknown user)'}`);
-  } else {
-    console.log(`User connected: socketId=${socket.id} userId=anonymous`);
+    console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
   }
+
+  // Global Chat
+  socket.on('join_global', () => {
+    socket.join('global_chat');
+  });
+
+  socket.on('send_global_message', async (data) => {
+    try {
+      const newMsg = await Message.create({
+        chatType: 'global',
+        senderId: data.senderId,
+        senderName: data.senderName,
+        text: data.text
+      });
+      io.to('global_chat').emit('receive_global_message', newMsg);
+    } catch (err) {
+      console.error('Error saving global message:', err);
+    }
+  });
+
+  // Personal Chat
+  socket.on('send_personal_message', async (data) => {
+    try {
+      const newMsg = await Message.create({
+        chatType: 'personal',
+        senderId: data.senderId,
+        senderName: data.senderName,
+        receiverId: data.receiverId,
+        text: data.text
+      });
+      // Emit to receiver's room and sender's room
+      io.to(data.receiverId).emit('receive_personal_message', newMsg);
+      io.to(data.senderId).emit('receive_personal_message', newMsg);
+    } catch (err) {
+      console.error('Error saving personal message:', err);
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id} userId=${displayId}`);
