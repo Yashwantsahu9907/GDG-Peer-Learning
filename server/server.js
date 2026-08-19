@@ -79,6 +79,12 @@ app.get('/api/users/:userId', async (req, res) => {
   }
 });
 
+// Stats Route
+app.get('/api/stats', (req, res) => {
+  const activePeers = 1248 + (io.engine ? io.engine.clientsCount : 0);
+  res.status(200).json({ success: true, activePeers });
+});
+
 // Basic Route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Server is running' });
