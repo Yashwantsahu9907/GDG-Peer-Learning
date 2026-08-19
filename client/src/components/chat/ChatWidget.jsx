@@ -69,27 +69,31 @@ const ChatWidget = ({ user, onClose }) => {
   useEffect(() => {
     if (!user) return;
 
+    const chatApiBase = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/chat` : 'http://localhost:5000/api/chat';
+
     // Fetch Global Chat
-    fetch(`${API_URL}/chat/global`)
+    fetch(`${chatApiBase}/global?_t=${Date.now()}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setGlobalMessages(data.messages);
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error('Global Chat fetch error:', err));
 
     // Fetch Contacts
-    fetch(`${API_URL}/chat/contacts/${user._id}`)
+    fetch(`${chatApiBase}/contacts/${user._id}?_t=${Date.now()}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setContacts(data.contacts);
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error('Contacts fetch error:', err));
   }, [user]);
 
   // Fetch Personal Messages when a contact is selected
   useEffect(() => {
     if (activeTab === 'personal' && selectedContact) {
-      fetch(`${API_URL}/chat/personal/${user._id}/${selectedContact.userId}`)
+      const chatApiBase = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/chat` : 'http://localhost:5000/api/chat';
+      
+      fetch(`${chatApiBase}/personal/${user._id}/${selectedContact.userId}?_t=${Date.now()}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) setPersonalMessages(data.messages);
