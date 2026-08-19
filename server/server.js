@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
     socket.join(userId);
     User.findById(userId).then(user => {
       if (user) {
-        console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
+        // User connected
       }
     }).catch(err => {
       console.error('Socket connection DB error:', err);
@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id} userId=${displayId}`);
+    // User disconnected
   });
 });
 

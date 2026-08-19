@@ -34,7 +34,7 @@ const Home = () => {
       });
 
       socket.on('connect', () => {
-        console.log('Connected to socket server from client', user.userId);
+        // Connected to socket server
       });
 
       return socket;

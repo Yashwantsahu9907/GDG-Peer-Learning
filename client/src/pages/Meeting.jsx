@@ -19,7 +19,6 @@ const Meeting = () => {
   const rightRef = useRef(null);
 
   useEffect(() => {
-    const onMove = (e) => {};
     return () => {}; // noop - handlers attached per drag start
   }, []);
 

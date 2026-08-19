@@ -58,7 +58,7 @@ const Session = () => {
           initiateCall(peerId);
         });
 
-        socketService.on('code_update', ({ code, cursorPosition }) => {
+        socketService.on('code_update', ({ code, _cursorPosition }) => {
           isUpdatingCode.current = true;
           setCode(code);
           // Optional: handle cursorPosition to show peer's cursor
@@ -99,6 +99,7 @@ const Session = () => {
         peerConnectionRef.current.close();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Timer

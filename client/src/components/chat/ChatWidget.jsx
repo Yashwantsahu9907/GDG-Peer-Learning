@@ -3,7 +3,6 @@ import { io } from 'socket.io-client';
 import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft } from 'lucide-react';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ChatWidget = ({ user, onClose }) => {
   const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'

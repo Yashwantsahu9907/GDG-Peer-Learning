@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, Edit3, MessageSquare } from 'lucide-react';
+import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, MessageSquare } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ChatWidget from './chat/ChatWidget';

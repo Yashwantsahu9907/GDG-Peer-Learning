@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+
 import TypingIndicator from '../components/TypingIndicator';
 
 const messagesMock = [
@@ -8,7 +8,6 @@ const messagesMock = [
 ];
 
 const Chat = () => {
-  const { id } = useParams();
   const [messages] = useState(messagesMock);
   const [text, setText] = useState('');
 

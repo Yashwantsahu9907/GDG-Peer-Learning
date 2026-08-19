@@ -11,6 +11,7 @@ const CameraPanel = () => {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         if (videoRef.current) videoRef.current.srcObject = stream;
       } catch (err) {
+        console.error(err);
         setError('Camera unavailable');
       }
     };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Code, Zap, Globe, ArrowRight, BookOpen, UserPlus, Target, Award, Plus, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy } from 'lucide-react';
+import { Users, Code, Zap, ArrowRight, BookOpen, Target, Award, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy } from 'lucide-react';
 import { getStoredUser } from '../utils/userClient';
 
 const HeroSection = ({ activePeers, handleFindMentorClick }) => (
