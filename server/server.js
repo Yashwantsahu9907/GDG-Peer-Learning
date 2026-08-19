@@ -33,13 +33,6 @@ app.use(cookieParser());
 
 // Routes
 import bountyRoutes from './routes/bountyRoutes.js';
-import chatRoutes from './routes/chatRoutes.js';
-import Message from './models/Message.js';
-
-app.use('/api/auth', authRoutes);
-app.use('/api', bountyRoutes);
-app.use('/api/chat', chatRoutes);
-
 // Socket.io Connection
 io.on('connection', (socket) => {
   const { userId } = socket.handshake.auth || {};
