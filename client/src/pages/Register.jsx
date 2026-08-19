@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, User, Phone, Book, GraduationCap, ArrowRight } from 'lucide-react';
-import { auth } from '../utils/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -54,40 +53,40 @@ const Register = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: user.displayName,
-          email: user.email,
-          googleId: user.uid,
-          photoURL: user.photoURL
-        }),
-        credentials: 'include'
-      });
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        login(data.user);
-        navigate('/dashboard');
-      } else {
-        setError(data.message || 'Google registration failed');
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken: tokenResponse.access_token
+          }),
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          login(data.user);
+          navigate('/dashboard');
+        } else {
+          setError(data.message || 'Google registration failed');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Failed to register with Google.');
         setLoading(false);
       }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to register with Google.');
+    },
+    onError: () => {
+      setError('Google registration was cancelled or failed.');
       setLoading(false);
     }
-  };
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
