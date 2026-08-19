@@ -10,6 +10,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -23,7 +24,6 @@ const Navbar = () => {
   }, []);
   
   const navLinks = [
-    ...(isLoggedIn ? [{ name: 'Dashboard', path: '/dashboard' }] : []),
     { name: 'Discover', path: '/discover' },
     { name: 'Bounties', path: '/bounties' },
     { name: 'Leaderboard', path: '/leaderboard' },
@@ -130,12 +130,12 @@ const Navbar = () => {
                       
                       <div className="py-1">
                         <Link 
-                          to="/dashboard" 
+                          to="/profile" 
                           onClick={() => setIsDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group"
                         >
-                          <LayoutDashboard className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-                          My Dashboard
+                          <User className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
+                          My Profile
                         </Link>
                       </div>
                       
@@ -167,12 +167,69 @@ const Navbar = () => {
             )}
 
             {/* Mobile menu button */}
-            <button className="md:hidden p-2 text-[var(--color-text-secondary)]">
+            <button 
+              className="md:hidden p-2 text-[var(--color-text-secondary)]"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
               <Menu className="h-6 w-6" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Panel */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-[var(--color-bg-primary)] border-t border-[var(--color-border)] absolute w-full left-0 top-16 shadow-lg z-50">
+          <div className="px-4 pt-2 pb-4 space-y-1">
+            {/* Mobile Search */}
+            <div className="relative mb-4 mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
+              <input 
+                type="text" 
+                placeholder="Search mentors, skills..." 
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full pl-9 pr-4 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all"
+              />
+            </div>
+
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    isActive 
+                      ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]' 
+                      : 'text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
+            
+            {!isLoggedIn && (
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
+                <Link 
+                  to="/login" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 text-[var(--color-text-primary)] font-medium border border-[var(--color-border)] rounded-full hover:bg-[var(--color-bg-secondary)]"
+                >
+                  Log in
+                </Link>
+                <Link 
+                  to="/register" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-medium rounded-full"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

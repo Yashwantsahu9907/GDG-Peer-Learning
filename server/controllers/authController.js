@@ -103,7 +103,23 @@ export const getMe = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
-    const { name, email, googleId, photoURL } = req.body;
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({ success: false, message: 'No access token provided' });
+    }
+
+    const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (!googleResponse.ok) {
+      return res.status(400).json({ success: false, message: 'Invalid Google Token' });
+    }
+
+    const userInfo = await googleResponse.json();
+    const { name, email, sub: googleId, picture: photoURL } = userInfo;
+
     let user = await User.findOne({ email });
 
     if (user) {
