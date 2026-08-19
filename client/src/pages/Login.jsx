@@ -42,7 +42,7 @@ const Login = () => {
       }
 
       login(data.user);
-      navigate('/dashboard');
+      navigate('/profile');
     } catch (fetchError) {
       setError('Server error while trying to log in.');
       setLoading(false);
@@ -67,7 +67,7 @@ const Login = () => {
         
         if (response.ok && data.success) {
           login(data.user);
-          navigate('/dashboard');
+          navigate('/profile');
         } else {
           setError(data.message || 'Google login failed');
           setLoading(false);

@@ -46,7 +46,7 @@ const Register = () => {
       }
 
       login(data.user);
-      navigate('/dashboard');
+      navigate('/profile');
     } catch (fetchError) {
       setError('Server error while trying to register.');
       setLoading(false);
@@ -71,7 +71,7 @@ const Register = () => {
         
         if (response.ok && data.success) {
           login(data.user);
-          navigate('/dashboard');
+          navigate('/profile');
         } else {
           setError(data.message || 'Google registration failed');
           setLoading(false);

@@ -195,7 +195,7 @@ const Session = () => {
 
   const handleEndSession = async () => {
     // API call to end session could go here
-    navigate('/dashboard');
+    navigate('/profile');
   };
 
   const handleSendMessage = (e) => {
