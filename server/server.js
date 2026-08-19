@@ -33,21 +33,66 @@ app.use(cookieParser());
 
 // Routes
 import bountyRoutes from './routes/bountyRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import Message from './models/Message.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api', bountyRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Socket.io Connection
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
   const { userId } = socket.handshake.auth || {};
   const displayId = userId || socket.id;
 
+  // Global Chat
+  socket.on('join_global', () => {
+    socket.join('global_chat');
+  });
+
+  socket.on('send_global_message', async (data) => {
+    try {
+      const newMsg = await Message.create({
+        chatType: 'global',
+        senderId: data.senderId,
+        senderName: data.senderName,
+        text: data.text
+      });
+      io.to('global_chat').emit('receive_global_message', newMsg);
+    } catch (err) {
+      console.error('Error saving global message:', err);
+    }
+  });
+
+  // Async DB check for user connection logging & personal room
   if (userId) {
-    const user = await User.findOne({ userId });
-    console.log(`User connected: socketId=${socket.id} userId=${displayId} ${user ? '(found)' : '(unknown user)'}`);
-  } else {
-    console.log(`User connected: socketId=${socket.id} userId=anonymous`);
+    socket.join(userId);
+    User.findById(userId).then(user => {
+      if (user) {
+        console.log(`User connected: socketId=${socket.id} userId=${displayId}`);
+      }
+    }).catch(err => {
+      console.error('Socket connection DB error:', err);
+    });
   }
+
+  // Personal Chat
+  socket.on('send_personal_message', async (data) => {
+    try {
+      const newMsg = await Message.create({
+        chatType: 'personal',
+        senderId: data.senderId,
+        senderName: data.senderName,
+        receiverId: data.receiverId,
+        text: data.text
+      });
+      // Emit to receiver's room and sender's room
+      io.to(data.receiverId).emit('receive_personal_message', newMsg);
+      io.to(data.senderId).emit('receive_personal_message', newMsg);
+    } catch (err) {
+      console.error('Error saving personal message:', err);
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id} userId=${displayId}`);
