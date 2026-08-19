@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, Edit3 } from 'lucide-react';
+import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, Edit3, MessageSquare } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import ChatWidget from './chat/ChatWidget';
 
 const Navbar = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const Navbar = () => {
   const isLoggedIn = !!user;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -113,10 +115,20 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative hidden sm:block">
+                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative">
                   <Bell className="h-5 w-5" />
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-accent)] border-2 border-[var(--color-bg-primary)]"></span>
                 </button>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    className={`p-2 transition-colors relative rounded-full ${isChatOpen ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                  >
+                    <MessageSquare className="h-5 w-5" />
+                  </button>
+                  {isChatOpen && <ChatWidget user={user} onClose={() => setIsChatOpen(false)} />}
+                </div>
                 
                 {/* Profile Dropdown */}
                 <div className="relative ml-1" ref={dropdownRef}>
@@ -144,9 +156,7 @@ const Navbar = () => {
                         <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
                           <User className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> My Profile
                         </Link>
-                        <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
-                          <Edit3 className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> Edit Profile
-                        </Link>
+
                       </div>
 
                       <div className="py-2 border-t border-[var(--color-border)]">
