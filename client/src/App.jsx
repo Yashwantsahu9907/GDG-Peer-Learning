@@ -11,6 +11,7 @@ import Register from'./pages/Register';
 import Profile from'./pages/Profile';
 import Points from'./pages/Points';
 import { AuthProvider } from'./contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from'./components/ProtectedRoute';
 import { Toaster } from'react-hot-toast';
 import Session from'./pages/Session';
