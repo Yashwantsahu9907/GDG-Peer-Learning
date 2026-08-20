@@ -163,7 +163,7 @@ const ChatWidget = ({ user, onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:top-12 w-full sm:w-96 h-[100dvh] sm:h-[500px] sm:max-h-[85vh] bg-[var(--color-bg-primary)] sm:border border-[var(--color-border)] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:top-12 w-full sm:w-96 h-[100dvh] sm:h-[500px] sm:max-h-[85vh] bg-white sm:border border-[var(--color-border)] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
         {activeTab === 'personal' ? (
@@ -194,7 +194,7 @@ const ChatWidget = ({ user, onClose }) => {
 
       {/* Tabs */}
       {activeTab !== 'personal' && (
-        <div className="flex border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] shrink-0">
+        <div className="flex border-b border-[var(--color-border)] bg-white shrink-0">
           <button 
             className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${activeTab === 'global' ? 'text-[var(--color-accent)] border-b-2 border-[var(--color-accent)] bg-[var(--color-accent-light)]/20' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]'}`}
             onClick={() => setActiveTab('global')}
@@ -211,7 +211,7 @@ const ChatWidget = ({ user, onClose }) => {
       )}
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-3.5 bg-[var(--color-bg-primary)] space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3.5 bg-white space-y-3 custom-scrollbar">
         
         {/* GLOBAL CHAT TAB */}
         {activeTab === 'global' && (
