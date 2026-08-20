@@ -4,8 +4,21 @@ import Navbar from './Navbar';
 
 const Layout = () => {
   const location = useLocation();
+  const isLanding = location.pathname === '/';
+  const landingTheme = isLanding ? {
+    '--color-bg-primary': 'rgba(255, 255, 255, 0.52)',
+    '--color-bg-secondary': 'rgba(248, 249, 252, 0.44)',
+    '--color-bg-tertiary': 'rgba(242, 243, 245, 0.40)',
+    '--color-border': 'rgba(221, 222, 228, 0.82)',
+    '--color-text-primary': '#111114',
+    '--color-text-secondary': '#595a63',
+    '--color-text-muted': '#888994',
+    '--color-accent': '#2f8d46',
+    '--color-accent-hover': '#217336',
+    '--color-accent-light': '#eaf7ed',
+  } : undefined;
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-colors duration-200 selection:bg-[var(--color-accent)] selection:text-white">
+    <div style={{ ...landingTheme, ...(isLanding ? { backgroundColor: '#ffffff' } : {}) }} className={`min-h-screen flex flex-col bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-colors duration-200 selection:bg-[var(--color-accent)] selection:text-white ${isLanding ? 'landing-shell' : ''}`}>
       <Navbar />
       <main className="flex-grow w-full pt-20">
         <Outlet />

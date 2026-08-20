@@ -1,37 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Code, Zap, ArrowRight, BookOpen, Target, Award, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy } from 'lucide-react';
+import { Users, Code, Zap, Globe, ArrowRight, BookOpen, UserPlus, Target, Award, Plus, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy, Sparkles } from 'lucide-react';
 import { getStoredUser } from '../utils/userClient';
+import ParticleRing from '../components/ParticleRing';
 
 const HeroSection = ({ activePeers, handleFindMentorClick }) => (
-  <section id="hero" className="w-full max-w-6xl mx-auto px-4 pt-20 pb-24 text-center">
-    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--color-accent-light)] border border-[var(--color-accent-muted)] text-[var(--color-accent)] text-xs font-bold tracking-wide uppercase mb-8 opacity-0 animate-[fadeUp_0.5s_ease-out_forwards]">
-      <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
-      </span>
-      {activePeers.toLocaleString()} Peers Active Now
+  <section id="hero" className="relative isolate flex min-h-[calc(100vh-5rem)] w-full items-center justify-center overflow-hidden bg-white px-4 py-24 text-center">
+    <div className="hero-halo" aria-hidden="true" />
+    <div className="hero-orbit hero-orbit-one" aria-hidden="true" />
+    <div className="hero-orbit hero-orbit-two" aria-hidden="true" />
+    <div className="relative z-10 mx-auto max-w-5xl">
+      <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/75 px-4 py-2 text-xs font-semibold tracking-wide text-zinc-700 shadow-sm backdrop-blur opacity-0 animate-[fadeUp_0.5s_ease-out_forwards]">
+        <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+        {activePeers.toLocaleString()} developers learning together
+      </div>
+      <h1 className="mb-7 text-5xl font-semibold leading-[0.96] tracking-[-0.065em] text-zinc-950 sm:text-7xl lg:text-[6.35rem] opacity-0 animate-[fadeUp_0.5s_ease-out_0.1s_forwards]">
+        Build momentum with the next generation of <span className="hero-gradient-text">peer learning.</span>
+      </h1>
+      <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg opacity-0 animate-[fadeUp_0.5s_ease-out_0.2s_forwards]">
+        Find brilliant people to learn with, exchange real skills, and turn curiosity into collaborative progress.
+      </p>
+      <div className="flex flex-col items-center justify-center gap-3 sm:flex-row opacity-0 animate-[fadeUp_0.5s_ease-out_0.3s_forwards]">
+        <button onClick={handleFindMentorClick} className="inline-flex min-w-48 items-center justify-center gap-2 rounded-full bg-zinc-950 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-zinc-900/15 transition hover:-translate-y-0.5 hover:bg-zinc-800">
+          Find your people <ArrowRight className="h-4 w-4" />
+        </button>
+        <Link to="/bounties" className="inline-flex min-w-48 items-center justify-center rounded-full border border-zinc-200 bg-white/80 px-7 py-3.5 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white">
+          Explore challenges
+        </Link>
+      </div>
     </div>
-    
-    <h1 className="text-5xl md:text-7xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight mb-6 opacity-0 animate-[fadeUp_0.5s_ease-out_0.1s_forwards]">
-      Master Tech Skills with <br className="hidden md:block" />
-      <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-accent)] to-[#4ade80]">
-        Peer Mentorship
-      </span>
-    </h1>
-    
-    <p className="max-w-2xl mx-auto text-lg md:text-xl text-[var(--color-text-secondary)] mb-10 leading-relaxed opacity-0 animate-[fadeUp_0.5s_ease-out_0.2s_forwards]">
-      Connect, collaborate, and learn from fellow developers. Earn reputation, complete bounties, and build your engineering career in an open, community-driven ecosystem.
-    </p>
-
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0 animate-[fadeUp_0.5s_ease-out_0.3s_forwards]">
-      <button onClick={handleFindMentorClick} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-        Find a Mentor <ArrowRight className="h-4 w-4" />
-      </button>
-      <Link to="/bounties" className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-primary)] font-bold flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow">
-        Solve Bounties
-      </Link>
-    </div>
+    <div className="absolute bottom-7 z-10 hidden items-center gap-2 text-xs font-medium text-zinc-400 sm:flex"><span className="h-px w-8 bg-zinc-300" /> Move your cursor through the field <span className="h-px w-8 bg-zinc-300" /></div>
   </section>
 );
 
@@ -377,17 +375,20 @@ const Landing = () => {
   };
 
   return (
-    <div className="w-full flex flex-col items-center bg-[var(--color-bg-primary)] font-sans">
-      <HeroSection activePeers={activePeers} handleFindMentorClick={handleFindMentorClick} />
-      <WorkspaceOverview />
-      <HowItWorks />
-      <SkillExchange />
-      <HallOfFame />
-      <BountySection />
-      <CommunityStats />
-      <FAQ />
-      <FinalCTA />
-      <Footer />
+    <div className="landing-immersive relative isolate w-full overflow-hidden bg-white font-sans">
+      <ParticleRing className="pointer-events-none fixed inset-0 z-0 h-screen w-screen opacity-90" />
+      <div className="relative z-10 flex w-full flex-col items-center">
+        <HeroSection activePeers={activePeers} handleFindMentorClick={handleFindMentorClick} />
+        <WorkspaceOverview />
+        <HowItWorks />
+        <SkillExchange />
+        <HallOfFame />
+        <BountySection />
+        <CommunityStats />
+        <FAQ />
+        <FinalCTA />
+        <Footer />
+      </div>
     </div>
   );
 };
