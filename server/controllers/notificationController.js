@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 
@@ -19,7 +20,9 @@ export const getNotifications = async (req, res) => {
       .lean();
 
     // Populate sender details manually since we use userId as String
-    const senderIds = [...new Set(notifications.map(n => n.senderId))];
+    const senderIds = [...new Set(notifications.map(n => n.senderId))]
+      .filter(id => id && mongoose.isValidObjectId(id));
+      
     const senders = await User.find({ _id: { $in: senderIds } }).lean();
     const senderMap = senders.reduce((acc, sender) => {
       acc[sender._id.toString()] = { userId: sender._id.toString(), name: sender.name, avatar: sender.avatar };
