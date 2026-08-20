@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { socketService } from '../../utils/socket';
-import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2 } from 'lucide-react';
+import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2, CornerDownRight } from 'lucide-react';
 
 const ChatWidget = ({ user, onClose }) => {
   const currentUserId = user?._id || user?.userId || 'guest';
@@ -13,6 +13,7 @@ const ChatWidget = ({ user, onClose }) => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [editingMessage, setEditingMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
   const [activeMessageId, setActiveMessageId] = useState(null);
   
   const messagesEndRef = useRef(null);
@@ -164,15 +165,19 @@ const ChatWidget = ({ user, onClose }) => {
       socketService.emit('send_global_message', {
         senderId: currentUserId,
         senderName: currentUserName,
-        text: inputMessage.trim()
+        text: inputMessage.trim(),
+        replyTo: replyingTo ? { messageId: replyingTo._id, senderName: replyingTo.senderName, text: replyingTo.text } : null
       });
+      setReplyingTo(null);
     } else if (activeTab === 'personal' && selectedContact) {
       socketService.emit('send_personal_message', {
         senderId: currentUserId,
         senderName: currentUserName,
         receiverId: selectedContact.userId,
-        text: inputMessage.trim()
+        text: inputMessage.trim(),
+        replyTo: replyingTo ? { messageId: replyingTo._id, senderName: replyingTo.senderName, text: replyingTo.text } : null
       });
+      setReplyingTo(null);
     }
     
     setInputMessage('');
@@ -271,7 +276,7 @@ const ChatWidget = ({ user, onClose }) => {
                         className={`transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}
                         title="Reply Privately"
                       >
-                        <MessageSquare className="w-3 h-3" /> Reply
+                        <MessageSquare className="w-3 h-3" /> Reply Privately
                       </button>
                     )}
                     {msg.senderId === currentUserId && (
@@ -284,9 +289,18 @@ const ChatWidget = ({ user, onClose }) => {
                         </button>
                       </div>
                     )}
+                    <button onClick={(e) => { e.stopPropagation(); setReplyingTo(msg); }} className={`transition-opacity text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] flex items-center gap-1 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`} title="Reply">
+                      <CornerDownRight className="w-3 h-3" /> Reply
+                    </button>
                   </div>
-                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm cursor-pointer ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
-                    {msg.text}
+                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm cursor-pointer flex flex-col gap-1 ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                    {msg.replyTo && (
+                      <div className={`px-2 py-1 text-[10px] rounded border-l-2 opacity-80 ${msg.senderId === currentUserId ? 'bg-white/20 border-white text-white' : 'bg-black/5 border-[var(--color-accent)] text-[var(--color-text-secondary)]'}`}>
+                        <div className="font-bold">{msg.replyTo.senderName}</div>
+                        <div className="truncate">{msg.replyTo.text}</div>
+                      </div>
+                    )}
+                    <span>{msg.text}</span>
                   </div>
                 </div>
               ))
@@ -350,23 +364,34 @@ const ChatWidget = ({ user, onClose }) => {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[9px] text-[var(--color-text-muted)] mx-1">{formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
-                      {isSelf && (
-                        <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
-                          <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500" title="Delete">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
+                      <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+                        {isSelf && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500" title="Delete">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); setReplyingTo(msg); }} className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" title="Reply">
+                          <CornerDownRight className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
-                    <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words ${
+                    <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words flex flex-col gap-1 ${
                       isSelf 
                         ? 'bg-[var(--color-accent)] text-white rounded-tr-none' 
                         : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-none'
                     }`}>
-                      {msg.text}
+                      {msg.replyTo && (
+                        <div className={`px-2 py-1 text-[10px] rounded border-l-2 opacity-80 ${isSelf ? 'bg-white/20 border-white text-white' : 'bg-black/5 border-[var(--color-accent)] text-[var(--color-text-secondary)]'}`}>
+                          <div className="font-bold">{msg.replyTo.senderName}</div>
+                          <div className="truncate">{msg.replyTo.text}</div>
+                        </div>
+                      )}
+                      <span>{msg.text}</span>
                     </div>
                   </div>
                 );
@@ -380,6 +405,17 @@ const ChatWidget = ({ user, onClose }) => {
       {/* Input Area */}
       {activeTab !== 'contacts' && (
         <form onSubmit={handleSendMessage} className="p-3 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
+          {replyingTo && (
+            <div className="mb-2 bg-[var(--color-bg-primary)] border-l-2 border-[var(--color-accent)] px-2 py-1.5 flex justify-between items-start rounded-r-md">
+              <div className="flex flex-col truncate pr-2">
+                <span className="text-[10px] font-bold text-[var(--color-accent)]">Replying to {replyingTo.senderName}</span>
+                <span className="text-xs text-[var(--color-text-secondary)] truncate">{replyingTo.text}</span>
+              </div>
+              <button type="button" onClick={() => setReplyingTo(null)} className="text-[var(--color-text-muted)] hover:text-red-500 p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input 
               type="text" 

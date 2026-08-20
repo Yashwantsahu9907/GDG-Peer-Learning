@@ -63,6 +63,7 @@ io.on('connection', (socket) => {
         senderId: data.senderId || displayId,
         senderName: data.senderName || 'Anonymous',
         text: data.text,
+        replyTo: data.replyTo || null,
         timestamp: new Date()
       };
       
@@ -98,6 +99,7 @@ io.on('connection', (socket) => {
         senderName: data.senderName,
         receiverId: data.receiverId,
         text: data.text,
+        replyTo: data.replyTo || null,
         timestamp: new Date()
       };
 

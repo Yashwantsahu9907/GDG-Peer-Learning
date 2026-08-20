@@ -28,6 +28,11 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  replyTo: {
+    messageId: { type: String },
+    senderName: { type: String },
+    text: { type: String }
+  },
   timestamp: {
     type: Date,
     default: Date.now
