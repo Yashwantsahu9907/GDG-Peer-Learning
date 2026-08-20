@@ -52,7 +52,7 @@ const Notifications = () => {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]"></span>
+          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 border border-[var(--color-bg-primary)]"></span>
         )}
       </button>
 
