@@ -86,7 +86,8 @@ export const NotificationProvider = ({ children }) => {
       fetchUnreadCount();
       
       // Ensure socket is connected globally for notifications
-      socketService.connect(null, user._id);
+      const token = localStorage.getItem('token');
+      socketService.connect(token, user._id);
       
       socketService.on('notification:new', (notification) => {
         setNotifications(prev => [notification, ...prev]);
