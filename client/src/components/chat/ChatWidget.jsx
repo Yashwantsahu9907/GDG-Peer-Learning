@@ -194,8 +194,19 @@ const ChatWidget = ({ user, onClose }) => {
               </div>
             ) : (
               globalMessages.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.senderId === user._id ? 'items-end' : 'items-start'}`}>
-                  <span className="text-[10px] text-[var(--color-text-muted)] ml-1 mb-1">{msg.senderName} • {formatTime(msg.timestamp)}</span>
+                <div key={idx} className={`flex flex-col ${msg.senderId === user._id ? 'items-end' : 'items-start'} group`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}</span>
+                    {msg.senderId !== user._id && (
+                      <button 
+                        onClick={() => handleContactClick({ userId: msg.senderId, name: msg.senderName })}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
+                        title="Reply Privately"
+                      >
+                        <MessageSquare className="w-3 h-3" /> Reply
+                      </button>
+                    )}
+                  </div>
                   <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user._id ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                     {msg.text}
                   </div>
