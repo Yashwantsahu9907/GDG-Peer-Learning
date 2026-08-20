@@ -156,7 +156,7 @@ const ChatWidget = ({ user, onClose }) => {
   );
 
   return (
-    <div className="absolute right-0 top-12 w-[90vw] sm:w-96 h-[500px] max-h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50">
+    <div className="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:top-12 w-full sm:w-96 h-[100dvh] sm:h-[500px] sm:max-h-[85vh] bg-[var(--color-bg-primary)] sm:border border-[var(--color-border)] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[100]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
         {activeTab === 'personal' ? (
