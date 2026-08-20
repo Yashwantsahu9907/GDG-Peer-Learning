@@ -95,6 +95,7 @@ const ChatWidget = ({ user, onClose }) => {
  socketService.on('receive_personal_message', handleReceivePersonal);
 
  return () => {
+ socketService.off('connect', onConnect);
  socketService.off('receive_global_message', handleReceiveGlobal);
  socketService.off('message_edited', handleMessageEdited);
  socketService.off('message_deleted', handleMessageDeleted);
