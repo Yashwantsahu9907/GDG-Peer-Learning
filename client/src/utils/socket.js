@@ -7,8 +7,8 @@ class SocketService {
  this.socket = null;
  }
 
- connect(token, userId) {
- if (this.socket?.connected) return;
+  connect(token, userId) {
+    if (this.socket) return;
  
  this.socket = io(SOCKET_URL, {
  auth: {

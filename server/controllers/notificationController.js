@@ -95,6 +95,23 @@ export const markAllAsRead = async (req, res) => {
   }
 };
 
+export const markSenderMessagesAsRead = async (req, res) => {
+  try {
+    const authenticatedUserId = req.user.userId;
+    const { senderId } = req.params;
+    
+    await Notification.updateMany(
+      { recipientId: authenticatedUserId, senderId, type: 'MESSAGE', isRead: false },
+      { isRead: true }
+    );
+
+    res.status(200).json({ success: true, message: 'Sender messages marked as read' });
+  } catch (error) {
+    console.error('Error marking sender messages as read:', error);
+    res.status(500).json({ success: false, message: 'Failed to mark sender messages as read' });
+  }
+};
+
 export const deleteNotification = async (req, res) => {
   try {
     const authenticatedUserId = req.user.userId;

@@ -11,7 +11,7 @@ const Home = () => {
  return storedUser;
  }
 
- const response = await fetch('http://localhost:5000/api/users', {
+ const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users`, {
  method:'POST',
  headers: {'Content-Type':'application/json'
  },
@@ -26,7 +26,7 @@ const Home = () => {
 
  const setupSocket = async () => {
  const user = await initializeUser();
- const socket = io('http://localhost:5000', {
+      const socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:5000', {
  auth: {
  userId: user.userId
  }
