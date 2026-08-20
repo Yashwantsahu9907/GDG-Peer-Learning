@@ -15,6 +15,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 import Session from './pages/Session';
+import Chat from './pages/Chat';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               <Route path="discover" element={<Discover />} />
               <Route path="bounties" element={<Bounties />} />
               <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               

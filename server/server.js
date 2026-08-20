@@ -32,14 +32,23 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
+import mongoose from 'mongoose';
+import Message from './models/Message.js';
 import bountyRoutes from './routes/bountyRoutes.js';
 import executeRoutes from './routes/executeRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+
 app.use('/api/auth', authRoutes);
 app.use('/api/bounties', bountyRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api', executeRoutes);
+
+// In-memory room occupancy tracking
+const sessionRooms = new Map();
+
 // Socket.io Connection
 io.on('connection', (socket) => {
-  const { userId } = socket.handshake.auth || {};
+  const { userId, auth_token } = socket.handshake.auth || {};
   const displayId = userId || socket.id;
 
   // Global Chat
@@ -49,50 +58,200 @@ io.on('connection', (socket) => {
 
   socket.on('send_global_message', async (data) => {
     try {
-      const newMsg = await Message.create({
+      const msgData = {
         chatType: 'global',
-        senderId: data.senderId,
-        senderName: data.senderName,
-        text: data.text
-      });
-      io.to('global_chat').emit('receive_global_message', newMsg);
+        senderId: data.senderId || displayId,
+        senderName: data.senderName || 'Anonymous',
+        text: data.text,
+        timestamp: new Date()
+      };
+      
+      let savedMsg = msgData;
+      try {
+        savedMsg = await Message.create(msgData);
+      } catch (dbErr) {
+        console.warn('DB save skipped/failed for global message, broadcasting memory fallback:', dbErr.message);
+      }
+
+      io.to('global_chat').emit('receive_global_message', savedMsg);
     } catch (err) {
-      console.error('Error saving global message:', err);
+      console.error('Error handling global message:', err);
     }
   });
 
-  // Async DB check for user connection logging & personal room
+  // Async DB check for user connection logging & personal room (safe against non-ObjectId strings)
   if (userId) {
     socket.join(userId);
-    User.findById(userId).then(user => {
-      if (user) {
-        // User connected
-      }
-    }).catch(err => {
-      console.error('Socket connection DB error:', err);
-    });
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      User.findById(userId).catch(err => {
+        console.warn('Socket user lookup error:', err.message);
+      });
+    }
   }
 
   // Personal Chat
   socket.on('send_personal_message', async (data) => {
     try {
-      const newMsg = await Message.create({
+      const msgData = {
         chatType: 'personal',
         senderId: data.senderId,
         senderName: data.senderName,
         receiverId: data.receiverId,
-        text: data.text
-      });
-      // Emit to receiver's room and sender's room
-      io.to(data.receiverId).emit('receive_personal_message', newMsg);
-      io.to(data.senderId).emit('receive_personal_message', newMsg);
+        text: data.text,
+        timestamp: new Date()
+      };
+
+      let savedMsg = msgData;
+      try {
+        savedMsg = await Message.create(msgData);
+      } catch (dbErr) {
+        console.warn('DB save skipped for personal message:', dbErr.message);
+      }
+
+      io.to(data.receiverId).emit('receive_personal_message', savedMsg);
+      io.to(data.senderId).emit('receive_personal_message', savedMsg);
     } catch (err) {
-      console.error('Error saving personal message:', err);
+      console.error('Error handling personal message:', err);
+    }
+  });
+
+  // ==========================================
+  // Collaborative Session / Meeting Room Events
+  // ==========================================
+  socket.on('join_session', ({ roomId, user: sessionUser }) => {
+    if (!roomId) return;
+    socket.join(roomId);
+    socket.currentRoom = roomId;
+    socket.sessionUser = sessionUser || { name: 'Peer', id: displayId };
+
+    if (!sessionRooms.has(roomId)) {
+      sessionRooms.set(roomId, new Map());
+    }
+    const roomUsers = sessionRooms.get(roomId);
+    roomUsers.set(socket.id, socket.sessionUser);
+
+    // Notify other peers in this room
+    socket.to(roomId).emit('peer_joined', {
+      peerId: socket.id,
+      user: socket.sessionUser,
+      occupantCount: roomUsers.size
+    });
+
+    // Send room occupancy list to the newly joined peer
+    socket.emit('room_users', {
+      users: Array.from(roomUsers.entries()).map(([peerId, u]) => ({ peerId, ...u })),
+      occupantCount: roomUsers.size
+    });
+  });
+
+  // Real-time Collaborative Code Editing
+  socket.on('code_change', ({ roomId, code_diff, cursorPosition, language }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('code_update', {
+      code: code_diff,
+      cursorPosition,
+      language,
+      senderId: socket.id,
+      senderName: socket.sessionUser?.name || 'Peer'
+    });
+  });
+
+  // Real-time Session Chat
+  socket.on('session_chat_message', ({ roomId, message }) => {
+    if (!roomId || !message) return;
+    io.to(roomId).emit('session_chat_message', {
+      ...message,
+      senderSocketId: socket.id
+    });
+  });
+
+  // Collaborative Session Notes Sync
+  socket.on('session_notes_change', ({ roomId, notes }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('notes_update', {
+      notes,
+      senderId: socket.id
+    });
+  });
+
+  // Collaborative Whiteboard Sync
+  socket.on('whiteboard_draw', ({ roomId, drawData }) => {
+    if (!roomId || !drawData) return;
+    socket.to(roomId).emit('whiteboard_draw', {
+      drawData,
+      senderId: socket.id
+    });
+  });
+
+  socket.on('whiteboard_clear', ({ roomId }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('whiteboard_clear', {
+      senderId: socket.id
+    });
+  });
+
+  // Typing indicator
+  socket.on('peer_typing', ({ roomId, isTyping }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('peer_typing', {
+      peerId: socket.id,
+      userName: socket.sessionUser?.name || 'Peer',
+      isTyping
+    });
+  });
+
+  // WebRTC Signaling
+  socket.on('webrtc_offer', ({ roomId, offer, target }) => {
+    if (target) {
+      io.to(target).emit('webrtc_offer', { offer, sender: socket.id });
+    } else if (roomId) {
+      socket.to(roomId).emit('webrtc_offer', { offer, sender: socket.id });
+    }
+  });
+
+  socket.on('webrtc_answer', ({ roomId, answer, target }) => {
+    if (target) {
+      io.to(target).emit('webrtc_answer', { answer, sender: socket.id });
+    } else if (roomId) {
+      socket.to(roomId).emit('webrtc_answer', { answer, sender: socket.id });
+    }
+  });
+
+  socket.on('webrtc_ice_candidate', ({ roomId, candidate, target }) => {
+    if (target) {
+      io.to(target).emit('webrtc_ice_candidate', { candidate, sender: socket.id });
+    } else if (roomId) {
+      socket.to(roomId).emit('webrtc_ice_candidate', { candidate, sender: socket.id });
+    }
+  });
+
+  socket.on('leave_session', ({ roomId }) => {
+    if (roomId && sessionRooms.has(roomId)) {
+      const roomUsers = sessionRooms.get(roomId);
+      roomUsers.delete(socket.id);
+      socket.leave(roomId);
+      socket.to(roomId).emit('peer_left', {
+        peerId: socket.id,
+        occupantCount: roomUsers.size
+      });
+      if (roomUsers.size === 0) {
+        sessionRooms.delete(roomId);
+      }
     }
   });
 
   socket.on('disconnect', () => {
-    // User disconnected
+    if (socket.currentRoom && sessionRooms.has(socket.currentRoom)) {
+      const roomUsers = sessionRooms.get(socket.currentRoom);
+      roomUsers.delete(socket.id);
+      socket.to(socket.currentRoom).emit('peer_left', {
+        peerId: socket.id,
+        occupantCount: roomUsers.size
+      });
+      if (roomUsers.size === 0) {
+        sessionRooms.delete(socket.currentRoom);
+      }
+    }
   });
 });
 
