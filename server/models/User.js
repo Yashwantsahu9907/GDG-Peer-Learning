@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
   semester: { type: String, required: true },
   role: { type: String, enum: ['Student', 'Mentor', 'Admin'], default: 'Student' },
   gdgCoins: { type: Number, default: 100 },
+  streak: { type: Number, default: 1 },
+  longestStreak: { type: Number, default: 1 },
   bio: { type: String, default: '' },
   website: { type: String, default: '' },
   lastLoginDate: { type: Date },

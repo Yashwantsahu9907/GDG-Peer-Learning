@@ -16,7 +16,7 @@ const Leaderboard = () => {
             rank: i + 1,
             name: m.name,
             score: m.gdgCoins,
-            streak: Math.floor(Math.random() * 20) + 1, // Mock streak
+            streak: m.streak || 1,
             badges: [m.role === 'Mentor' ? 'Top Mentor' : 'Contributor'],
             avatar: m.name.substring(0, 2).toUpperCase(),
           }));

@@ -1,33 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({
+  isDarkMode: false,
+  toggleTheme: () => {},
+});
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme === 'dark';
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
   useEffect(() => {
     const root = window.document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
+    root.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDarkMode: false, toggleTheme: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -35,3 +21,4 @@ export const ThemeProvider = ({ children }) => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => useContext(ThemeContext);
+

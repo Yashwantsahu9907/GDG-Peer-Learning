@@ -131,6 +131,12 @@ const Profile = () => {
           if (user.gdgCoins !== undefined) {
             profileData.stats.gdgCoins = user.gdgCoins;
           }
+          if (user.streak !== undefined) {
+            profileData.stats.currentStreak = user.streak;
+          }
+          if (user.longestStreak !== undefined) {
+            profileData.stats.longestStreak = user.longestStreak;
+          }
           if (user.bio !== undefined && user.bio !== null && user.bio !== '') {
             profileData.basicInfo.bio = user.bio;
           }
