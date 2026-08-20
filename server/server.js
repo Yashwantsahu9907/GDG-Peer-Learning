@@ -8,6 +8,9 @@ import connectDB from './config/db.js';
 import User from './models/User.js';
 import authRoutes from './routes/authRoutes.js';
 
+import notificationRoutes from './routes/notificationRoutes.js';
+import { createNotification } from './services/notificationService.js';
+
 // Connect to database
 connectDB();
 
@@ -15,11 +18,10 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize Socket.io
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE']
   }
 });
 
@@ -42,6 +44,60 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bounties', bountyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api', executeRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+// Test Endpoints to simulate actions
+app.post('/api/test/follow', async (req, res) => {
+  const { senderId, recipientId } = req.body;
+  
+  // Logic to simulate follow/follow-back
+  // Let's assume we randomly send FOLLOW or FOLLOW_BACK for testing
+  const type = Math.random() > 0.5 ? 'FOLLOW' : 'FOLLOW_BACK';
+  
+  const notif = await createNotification({
+    recipientId,
+    senderId,
+    type,
+    message: type === 'FOLLOW' ? 'started following you.' : 'followed you back.',
+    link: `/profile/${senderId}`
+  }, io);
+  
+  res.json({ success: true, notification: notif });
+});
+
+app.post('/api/test/message', async (req, res) => {
+  const { senderId, recipientId, content } = req.body;
+  
+  // Create message notification
+  await createNotification({
+    recipientId,
+    senderId,
+    type: 'MESSAGE',
+    message: 'sent you a message.',
+    link: `/chat/${senderId}`
+  }, io);
+
+  // Check for mentions
+  const mentionRegex = /@(\w+)/g;
+  const matches = [...content.matchAll(mentionRegex)];
+  const mentionedUsernames = [...new Set(matches.map(m => m[1]))];
+
+  for (const username of mentionedUsernames) {
+    // Find user by name (mocking username as name here for simplicity)
+    const mentionedUser = await User.findOne({ name: username });
+    if (mentionedUser && mentionedUser._id.toString() !== senderId) {
+      await createNotification({
+        recipientId: mentionedUser._id.toString(),
+        senderId,
+        type: 'MENTION',
+        message: 'mentioned you in a message.',
+        link: `/chat/${senderId}`
+      }, io);
+    }
+  }
+  
+  res.json({ success: true });
+});
 
 // In-memory room occupancy tracking
 const sessionRooms = new Map();
@@ -75,6 +131,24 @@ io.on('connection', (socket) => {
       }
 
       io.to('global_chat').emit('receive_global_message', savedMsg);
+      
+      // Check for mentions in global chat
+      const mentionRegex = /@(\w+)/g;
+      const matches = [...(data.text || '').matchAll(mentionRegex)];
+      const mentionedUsernames = [...new Set(matches.map(m => m[1]))];
+
+      for (const username of mentionedUsernames) {
+        const mentionedUser = await User.findOne({ name: username });
+        if (mentionedUser && mentionedUser._id.toString() !== msgData.senderId) {
+          await createNotification({
+            recipientId: mentionedUser._id.toString(),
+            senderId: msgData.senderId,
+            type: 'MENTION',
+            message: 'mentioned you in global chat.',
+            link: `/chat/global`
+          }, io);
+        }
+      }
     } catch (err) {
       console.error('Error handling global message:', err);
     }
@@ -82,6 +156,7 @@ io.on('connection', (socket) => {
 
   // Async DB check for user connection logging & personal room (safe against non-ObjectId strings)
   if (userId) {
+    socket.join(`user:${userId}`); // Ensure private user room for notifications
     socket.join(userId);
     if (mongoose.Types.ObjectId.isValid(userId)) {
       User.findById(userId).catch(err => {
@@ -112,6 +187,33 @@ io.on('connection', (socket) => {
 
       io.to(data.receiverId).emit('receive_personal_message', savedMsg);
       io.to(data.senderId).emit('receive_personal_message', savedMsg);
+      
+      // Create message notification
+      await createNotification({
+        recipientId: data.receiverId,
+        senderId: data.senderId,
+        type: 'MESSAGE',
+        message: 'sent you a message.',
+        link: `/chat/${data.senderId}`
+      }, io);
+
+      // Check for mentions in personal chat (if someone mentions a third person)
+      const mentionRegex = /@(\w+)/g;
+      const matches = [...(data.text || '').matchAll(mentionRegex)];
+      const mentionedUsernames = [...new Set(matches.map(m => m[1]))];
+
+      for (const username of mentionedUsernames) {
+        const mentionedUser = await User.findOne({ name: username });
+        if (mentionedUser && mentionedUser._id.toString() !== data.senderId) {
+          await createNotification({
+            recipientId: mentionedUser._id.toString(),
+            senderId: data.senderId,
+            type: 'MENTION',
+            message: 'mentioned you in a message.',
+            link: `/chat/${data.senderId}`
+          }, io);
+        }
+      }
     } catch (err) {
       console.error('Error handling personal message:', err);
     }

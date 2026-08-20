@@ -17,12 +17,15 @@ import { Toaster } from 'react-hot-toast';
 import Session from './pages/Session';
 import Chat from './pages/Chat';
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
-        <BrowserRouter>
+        <NotificationProvider>
+          <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Landing />} />
@@ -42,6 +45,7 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </NotificationProvider>
       </ThemeProvider>
     </AuthProvider>
   );

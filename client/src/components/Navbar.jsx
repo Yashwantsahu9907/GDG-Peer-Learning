@@ -4,6 +4,7 @@ import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, Chevro
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ChatWidget from './chat/ChatWidget';
+import Notifications from './Notifications';
 
 const Navbar = () => {
   const location = useLocation();
@@ -115,10 +116,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <button className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-accent)] border-2 border-[var(--color-bg-primary)]"></span>
-                </button>
+                <Notifications />
                 
                 <div className="relative">
                   <button 
