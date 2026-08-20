@@ -4,6 +4,7 @@ import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Spar
 
 const ChatWidget = ({ user, onClose }) => {
   const currentUserId = user?._id || user?.userId || 'guest';
+  const currentUserName = user?.name || 'Guest User';
   const serverUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
   const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'
   const [globalMessages, setGlobalMessages] = useState([]);
