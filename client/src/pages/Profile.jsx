@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   MapPin, Link as LinkIcon,
   Users, Video, BookOpen, Star, Trophy, Clock,
-  CheckCircle2, Flame, Target, MessageSquare, Award,
+  CheckCircle2, Flame, Award,
   Calendar, Code, Zap, Edit3, Settings, Shield
 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ const Section = ({ title, children, action }) => (
 );
 
 // MOCK API Client
-const fetchProfileData = async (userId) => {
+const fetchProfileData = async (_userId) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
@@ -105,13 +105,43 @@ const Profile = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editBioText, setEditBioText] = useState("");
+  const [editWebsiteText, setEditWebsiteText] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const profileData = await fetchProfileData(user?.userId || 'me');
+        // In a real app, this would fetch from /api/users/${userId}
+        const profileData = await fetchProfileData(user?._id || 'me');
+        
+        // Merge actual user data if available
+        if (user) {
+          profileData.basicInfo.name = user.name || profileData.basicInfo.name;
+          if (user.email) {
+            profileData.basicInfo.username = `@${user.email.split('@')[0]}`;
+          }
+          if (user.branch) {
+            profileData.basicInfo.department = user.branch;
+          }
+          if (user.semester) {
+            profileData.basicInfo.year = `Semester ${user.semester}`;
+          }
+          if (user.gdgCoins !== undefined) {
+            profileData.stats.gdgCoins = user.gdgCoins;
+          }
+          if (user.bio !== undefined && user.bio !== null && user.bio !== '') {
+            profileData.basicInfo.bio = user.bio;
+          }
+          if (user.website !== undefined) {
+            profileData.basicInfo.website = user.website;
+          }
+        }
+        
         setData(profileData);
+        setEditBioText(profileData.basicInfo.bio);
+        setEditWebsiteText(profileData.basicInfo.website);
       } catch (err) {
         console.error("Failed to load profile", err);
       } finally {
@@ -120,6 +150,28 @@ const Profile = () => {
     };
     loadData();
   }, [user]);
+
+  const handleSaveBio = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ bio: editBioText, website: editWebsiteText })
+      });
+      if (res.ok) {
+        setIsEditingBio(false);
+        setData({
+          ...data,
+          basicInfo: { ...data.basicInfo, bio: editBioText, website: editWebsiteText }
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) {
     return (
@@ -185,23 +237,59 @@ const Profile = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-5 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl font-semibold hover:border-[var(--color-accent)] transition-colors flex items-center gap-2">
-                  <Edit3 className="w-4 h-4" /> Edit Profile
-                </button>
+                {isEditingBio ? (
+                  <button 
+                    onClick={handleSaveBio}
+                    className="px-5 py-2.5 bg-[var(--color-accent)] text-white rounded-xl font-semibold hover:bg-[var(--color-accent-dark)] transition-colors flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Save Profile
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setIsEditingBio(true)}
+                    className="px-5 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl font-semibold hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" /> Edit Profile
+                  </button>
+                )}
                 <button className="p-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl hover:border-[var(--color-accent)] transition-colors">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <p className="text-[var(--color-text-primary)] text-lg leading-relaxed max-w-3xl mb-6">
-              {data.basicInfo.bio}
-            </p>
+            {isEditingBio ? (
+              <textarea 
+                className="w-full max-w-3xl mb-6 p-4 rounded-xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] text-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
+                rows={3}
+                value={editBioText}
+                onChange={(e) => setEditBioText(e.target.value)}
+              />
+            ) : (
+              <p className="text-[var(--color-text-primary)] text-lg leading-relaxed max-w-3xl mb-6 whitespace-pre-wrap">
+                {data.basicInfo.bio}
+              </p>
+            )}
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[var(--color-text-secondary)] font-medium">
               <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {data.basicInfo.location}</div>
               <div className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {data.basicInfo.college}</div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.department}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.year}</div>
+              {isEditingBio ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] border border-[var(--color-accent)] transition-colors">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <input 
+                    type="text" 
+                    placeholder="Website URL"
+                    className="bg-transparent focus:outline-none text-xs w-32"
+                    value={editWebsiteText}
+                    onChange={(e) => setEditWebsiteText(e.target.value)}
+                  />
+                </div>
+              ) : data.basicInfo.website ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
+              ) : null}
               <div className="flex items-center gap-4 ml-auto">
                 <GithubIcon className="w-5 h-5 hover:text-[var(--color-text-primary)] cursor-pointer transition-colors" />
                 <LinkedinIcon className="w-5 h-5 hover:text-[#0a66c2] cursor-pointer transition-colors" />
@@ -214,12 +302,15 @@ const Profile = () => {
         {/* 2. Social Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mt-10 pt-6 border-t border-[var(--color-border)] relative z-10">
           <div className="cursor-pointer group">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.followers}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Followers</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.gdgCoins || 0}</p>
+              <Award className="w-5 h-5 text-[var(--color-accent)]" />
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">GDG Coins</p>
           </div>
           <div className="cursor-pointer group">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.following}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Following</p>
+            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.followers}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Followers</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.peersHelped}</p>

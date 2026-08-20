@@ -1,20 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Star, Clock, Video, Grid, List, X, Calendar } from 'lucide-react';
+import { Search, Filter, Star, Clock, Video, Grid, List, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// Mock Data
+const mentors = [
+  { id: 1, name: 'Alice Chen', role: 'Senior CS Student', skills: ['React', 'Node.js', 'System Design'], rating: 4.9, match: 95, availability: ['Today 2-4PM', 'Tomorrow 10AM-12PM'], avatar: 'AC' },
+  { id: 2, name: 'David Kumar', role: 'GDG Lead', skills: ['Python', 'Machine Learning', 'Data Structures'], rating: 4.8, match: 88, availability: ['Wed 3-5PM'], avatar: 'DK' },
+  { id: 3, name: 'Sarah Jones', role: 'Frontend Specialist', skills: ['Vue', 'Tailwind CSS', 'Figma'], rating: 4.7, match: 82, availability: ['Thu 1-3PM', 'Fri 10AM-12PM'], avatar: 'SJ' },
+  { id: 4, name: 'Michael Lee', role: 'Backend Dev', skills: ['Go', 'Docker', 'Kubernetes'], rating: 4.9, match: 91, availability: ['Mon 9-11AM'], avatar: 'ML' },
+];
 
 const Discover = () => {
   const [view, setView] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalMentor, setSelectedModalMentor] = useState(null);
   const navigate = useNavigate();
-  
-  // Mock Data
-  const mentors = [
-    { id: 1, name: 'Alice Chen', role: 'Senior CS Student', skills: ['React', 'Node.js', 'System Design'], rating: 4.9, match: 95, availability: ['Today 2-4PM', 'Tomorrow 10AM-12PM'], avatar: 'AC' },
-    { id: 2, name: 'David Kumar', role: 'GDG Lead', skills: ['Python', 'Machine Learning', 'Data Structures'], rating: 4.8, match: 88, availability: ['Wed 3-5PM'], avatar: 'DK' },
-    { id: 3, name: 'Sarah Jones', role: 'Frontend Specialist', skills: ['Vue', 'Tailwind CSS', 'Figma'], rating: 4.7, match: 82, availability: ['Thu 1-3PM', 'Fri 10AM-12PM'], avatar: 'SJ' },
-    { id: 4, name: 'Michael Lee', role: 'Backend Dev', skills: ['Go', 'Docker', 'Kubernetes'], rating: 4.9, match: 91, availability: ['Mon 9-11AM'], avatar: 'ML' },
-  ];
 
   const filteredMentors = useMemo(() => {
     return mentors.filter(mentor => {
