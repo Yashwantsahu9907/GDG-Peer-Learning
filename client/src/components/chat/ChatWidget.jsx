@@ -3,6 +3,7 @@ import { socketService } from '../../utils/socket';
 import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle } from 'lucide-react';
 
 const ChatWidget = ({ user, onClose }) => {
+  const currentUserId = user?._id || user?.userId || 'guest';
   const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'
   const [globalMessages, setGlobalMessages] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -45,7 +46,7 @@ const ChatWidget = ({ user, onClose }) => {
       setContacts((prev) => {
         const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
         const exists = prev.find(c => c.userId === otherId);
-        const isMine = msg.senderId === user._id;
+        const isMine = msg.senderId === currentUserId;
         
         if (exists) {
           return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
@@ -222,10 +223,10 @@ const ChatWidget = ({ user, onClose }) => {
               </div>
             ) : (
               globalMessages.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.senderId === user._id ? 'items-end' : 'items-start'} group`}>
+                <div key={idx} className={`flex flex-col ${msg.senderId === currentUserId ? 'items-end' : 'items-start'} group`}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}</span>
-                    {msg.senderId !== user._id && (
+                    {msg.senderId !== currentUserId && (
                       <button 
                         onClick={() => handleContactClick({ userId: msg.senderId, name: msg.senderName })}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
@@ -235,7 +236,7 @@ const ChatWidget = ({ user, onClose }) => {
                       </button>
                     )}
                   </div>
-                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user._id ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                     {msg.text}
                   </div>
                 </div>
