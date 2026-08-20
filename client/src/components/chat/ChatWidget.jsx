@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { socketService } from '../../utils/socket';
-import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle } from 'lucide-react';
+import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2 } from 'lucide-react';
 
 const ChatWidget = ({ user, onClose }) => {
   const currentUserId = user?._id || user?.userId || 'guest';
@@ -12,6 +12,7 @@ const ChatWidget = ({ user, onClose }) => {
   const [personalMessages, setPersonalMessages] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
+  const [editingMessage, setEditingMessage] = useState(null);
   
   const messagesEndRef = useRef(null);
   const selectedContactRef = useRef(null);
@@ -70,11 +71,31 @@ const ChatWidget = ({ user, onClose }) => {
       });
     };
 
+        const handleMessageEdited = (editedMsg) => {
+      if (editedMsg.chatType === 'global') {
+        setGlobalMessages(prev => prev.map(m => m._id === editedMsg._id ? editedMsg : m));
+      } else {
+        setPersonalMessages(prev => prev.map(m => m._id === editedMsg._id ? editedMsg : m));
+      }
+    };
+
+    const handleMessageDeleted = ({ messageId, chatType }) => {
+      if (chatType === 'global') {
+        setGlobalMessages(prev => prev.filter(m => m._id !== messageId));
+      } else {
+        setPersonalMessages(prev => prev.filter(m => m._id !== messageId));
+      }
+    };
+
     socketService.on('receive_global_message', handleReceiveGlobal);
+    socketService.on('message_edited', handleMessageEdited);
+    socketService.on('message_deleted', handleMessageDeleted);
     socketService.on('receive_personal_message', handleReceivePersonal);
 
     return () => {
       socketService.off('receive_global_message', handleReceiveGlobal);
+      socketService.off('message_edited', handleMessageEdited);
+      socketService.off('message_deleted', handleMessageDeleted);
       socketService.off('receive_personal_message', handleReceivePersonal);
     };
   }, [currentUserId]);
@@ -126,6 +147,17 @@ const ChatWidget = ({ user, onClose }) => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
+
+    if (editingMessage) {
+      socketService.emit('edit_message', {
+        messageId: editingMessage._id,
+        senderId: currentUserId,
+        text: inputMessage.trim()
+      });
+      setEditingMessage(null);
+      setInputMessage('');
+      return;
+    }
 
     if (activeTab === 'global') {
       socketService.emit('send_global_message', {
@@ -227,15 +259,25 @@ const ChatWidget = ({ user, onClose }) => {
               globalMessages.map((msg, idx) => (
                 <div key={idx} className={`flex flex-col ${msg.senderId === currentUserId ? 'items-end' : 'items-start'} group`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
                     {msg.senderId !== currentUserId && (
-                      <button 
+                      <button
                         onClick={() => handleContactClick({ userId: msg.senderId, name: msg.senderName })}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
                         title="Reply Privately"
                       >
                         <MessageSquare className="w-3 h-3" /> Reply
                       </button>
+                    )}
+                    {msg.senderId === currentUserId && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                        <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500 text-[10px] flex items-center gap-1" title="Edit">
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                        <button onClick={() => socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId })} className="text-red-400 hover:text-red-500 text-[10px] flex items-center gap-1" title="Delete">
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
@@ -296,8 +338,20 @@ const ChatWidget = ({ user, onClose }) => {
                currentPersonalMsgs.map((msg, idx) => {
                 const isSelf = msg.senderId === currentUserId;
                 return (
-                  <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
-                    <span className="text-[9px] text-[var(--color-text-muted)] mx-1 mb-1">{formatTime(msg.timestamp)}</span>
+                  <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'} group`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] text-[var(--color-text-muted)] mx-1">{formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
+                      {isSelf && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                          <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId })} className="text-red-400 hover:text-red-500" title="Delete">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words ${
                       isSelf 
                         ? 'bg-[var(--color-accent)] text-white rounded-tr-none' 
@@ -322,7 +376,7 @@ const ChatWidget = ({ user, onClose }) => {
               type="text" 
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={activeTab === 'global' ? "Chat with community..." : `Message ${selectedContact?.name || 'peer'}...`}
+              placeholder={editingMessage ? "Edit message..." : (activeTab === 'global' ? "Chat with community..." : `Message ${selectedContact?.name || 'peer'}...`)}
               className="flex-1 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-full px-3.5 py-2 text-xs sm:text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-slate-500"
             />
             <button 

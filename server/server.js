@@ -115,6 +115,42 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('edit_message', async (data) => {
+    try {
+      const msg = await Message.findById(data.messageId);
+      if (msg && msg.senderId === data.senderId) {
+        msg.text = data.text;
+        msg.isEdited = true;
+        await msg.save();
+        if (msg.chatType === 'global') {
+          io.to('global_chat').emit('message_edited', msg);
+        } else {
+          io.to(msg.receiverId).emit('message_edited', msg);
+          io.to(msg.senderId).emit('message_edited', msg);
+        }
+      }
+    } catch (err) {
+      console.error('Error editing message:', err);
+    }
+  });
+
+  socket.on('delete_message', async (data) => {
+    try {
+      const msg = await Message.findById(data.messageId);
+      if (msg && msg.senderId === data.senderId) {
+        await Message.findByIdAndDelete(data.messageId);
+        if (msg.chatType === 'global') {
+          io.to('global_chat').emit('message_deleted', { messageId: msg._id, chatType: msg.chatType });
+        } else {
+          io.to(msg.receiverId).emit('message_deleted', { messageId: msg._id, chatType: msg.chatType });
+          io.to(msg.senderId).emit('message_deleted', { messageId: msg._id, chatType: msg.chatType });
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting message:', err);
+    }
+  });
+
   // ==========================================
   // Collaborative Session / Meeting Room Events
   // ==========================================
