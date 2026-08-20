@@ -15,6 +15,11 @@ const ChatWidget = ({ user, onClose }) => {
   const [inputMessage, setInputMessage] = useState('');
   
   const messagesEndRef = useRef(null);
+  const selectedContactRef = useRef(null);
+
+  useEffect(() => {
+    selectedContactRef.current = selectedContact;
+  }, [selectedContact]);
 
   // Initialize Socket
   useEffect(() => {
@@ -37,10 +42,6 @@ const ChatWidget = ({ user, onClose }) => {
     newSocket.on('receive_personal_message', (msg) => {
       // If we're currently chatting with the person this message is from/to
       setPersonalMessages((prev) => {
-        // We might receive messages from multiple people, but we only want to append
-        // to the current view if it belongs to the selected conversation.
-        // However, standard React state update here might not have latest selectedContact in scope 
-        // unless we use a ref or check the msg sender/receiver inside a functional update.
         return [...prev, msg];
       });
       
@@ -48,14 +49,22 @@ const ChatWidget = ({ user, onClose }) => {
       setContacts((prev) => {
         const otherId = msg.senderId === user._id ? msg.receiverId : msg.senderId;
         const exists = prev.find(c => c.userId === otherId);
+        const isMine = msg.senderId === user._id;
+        
         if (exists) {
-          return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, timestamp: msg.timestamp } : c);
+          return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
         } else {
-          // Add new contact
+          // Try to get name from current selected contact if we are the sender
+          let newName = isMine ? 'User' : msg.senderName;
+          if (isMine && selectedContactRef.current?.userId === otherId) {
+            newName = selectedContactRef.current.name;
+          }
+          
           return [{
             userId: otherId,
-            name: msg.senderId === user._id ? 'Unknown' : msg.senderName,
+            name: newName,
             lastMessage: msg.text,
+            lastMessageIsMine: isMine,
             timestamp: msg.timestamp
           }, ...prev];
         }
@@ -238,7 +247,10 @@ const ChatWidget = ({ user, onClose }) => {
                       <span className="font-bold text-sm text-[var(--color-text-primary)] truncate">{contact.name}</span>
                       <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{formatTime(contact.timestamp)}</span>
                     </div>
-                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{contact.lastMessage}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] truncate">
+                      {contact.lastMessageIsMine && <span className="font-semibold text-[var(--color-text-primary)] opacity-75">You: </span>}
+                      {contact.lastMessage}
+                    </p>
                   </div>
                 </div>
               ))
