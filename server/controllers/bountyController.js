@@ -73,9 +73,10 @@ export const resolveBounty = async (req, res) => {
 
 export const getLeaderboard = async (req, res) => {
   try {
-    const users = await User.find().sort({ gdgCoins: -1 }).select('name gdgCoins branch role').limit(100);
+    const users = await User.find().sort({ gdgCoins: -1 }).select('name gdgCoins branch role streak longestStreak').limit(100);
     res.status(200).json({ success: true, leaderboard: users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
