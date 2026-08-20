@@ -115,51 +115,51 @@ const Meeting = () => {
  };
 
  return (
- <div className="fixed inset-0 pt-16 z-40 bg-slate-950 flex flex-col overflow-hidden text-slate-100 font-sans">
+ <div className="fixed inset-0 pt-16 z-40 bg-gray-100 flex flex-col overflow-hidden text-gray-900 font-sans">
  
  {/* 1. Header Toolbar */}
- <header className="h-14 border-b border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
+ <header className="h-14 border-b border-gray-200 bg-white/90 backdrop-blur flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
  <div className="flex items-center gap-3">
  <div className="flex items-center gap-2">
  <span className="relative flex h-2.5 w-2.5">
  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
  </span>
- <span className="font-bold text-slate-100 text-sm">Collab Room</span>
+ <span className="font-bold text-gray-900 text-sm">Collab Room</span>
  </div>
 
- <div className="text-slate-300 font-mono text-xs bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
+ <div className="text-gray-700 font-mono text-xs bg-gray-100 px-2.5 py-1 rounded border border-gray-200">
  {elapsedTime}
  </div>
  </div>
 
  {/* Layout Presets & Actions */}
  <div className="flex items-center gap-2 sm:gap-3">
- <div className="hidden md:flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+ <div className="hidden md:flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 text-xs">
  <button
  onClick={() => applyLayout(62, 50)}
- className={`px-2.5 py-1 rounded transition-colors ${leftPct === 62 ?'bg-slate-800 text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`px-2.5 py-1 rounded transition-colors ${leftPct === 62 ?'bg-gray-200 text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  title="Standard Layout (60/40)"
  >
  Default
  </button>
  <button
  onClick={() => applyLayout(50, 50)}
- className={`px-2.5 py-1 rounded transition-colors ${leftPct === 50 ?'bg-slate-800 text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`px-2.5 py-1 rounded transition-colors ${leftPct === 50 ?'bg-gray-200 text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  title="Split 50/50"
  >
  50 / 50
  </button>
  <button
  onClick={() => applyLayout(75, 40)}
- className={`px-2.5 py-1 rounded transition-colors ${leftPct === 75 ?'bg-slate-800 text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`px-2.5 py-1 rounded transition-colors ${leftPct === 75 ?'bg-gray-200 text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  title="Code Focus Layout"
  >
  Code Focus
  </button>
  <button
  onClick={() => applyLayout(35, 70)}
- className={`px-2.5 py-1 rounded transition-colors ${leftPct === 35 ?'bg-slate-800 text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`px-2.5 py-1 rounded transition-colors ${leftPct === 35 ?'bg-gray-200 text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  title="Board Focus Layout"
  >
  Board Focus
@@ -168,7 +168,7 @@ const Meeting = () => {
 
  <button
  onClick={toggleFullscreen}
- className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+ className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
  title={isFullscreen ?'Exit Fullscreen' :'Enter Fullscreen'}
  >
  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -185,7 +185,7 @@ const Meeting = () => {
  </header>
 
  {/* 2. Interactive Resizable Split Grid */}
- <div className="flex-grow p-3 bg-slate-950 overflow-hidden relative">
+ <div className="flex-grow p-3 bg-gray-100 overflow-hidden relative">
  <div ref={containerRef} className="h-full w-full flex relative select-none">
  
  {/* LEFT PANE: Code Editor */}
@@ -196,10 +196,10 @@ const Meeting = () => {
  {/* VERTICAL DIVIDER RESIZER */}
  <div 
  onPointerDown={startVerticalDrag} 
- className="w-3 cursor-col-resize z-30 flex flex-col items-center justify-center group hover:bg-blue-500/10 transition-colors rounded"
+ className="w-3 cursor-col-resize z-30 flex flex-col items-center justify-center group hover:bg-emerald-500/10 transition-colors rounded"
  title="Drag to resize panes"
  >
- <div className="h-8 w-1 bg-slate-700 group-hover:bg-blue-400 group-hover:scale-y-125 rounded-full transition-all"></div>
+ <div className="h-8 w-1 bg-gray-300 group-hover:bg-emerald-400 group-hover:scale-y-125 rounded-full transition-all"></div>
  </div>
 
  {/* RIGHT PANE: Whiteboard (Top) + Camera (Bottom) */}
@@ -213,10 +213,10 @@ const Meeting = () => {
  {/* HORIZONTAL DIVIDER RESIZER */}
  <div 
  onPointerDown={startHorizontalDrag} 
- className="h-3 w-full cursor-row-resize z-30 flex items-center justify-center group hover:bg-blue-500/10 transition-colors rounded shrink-0"
+ className="h-3 w-full cursor-row-resize z-30 flex items-center justify-center group hover:bg-emerald-500/10 transition-colors rounded shrink-0"
  title="Drag to resize whiteboard and camera"
  >
- <div className="w-8 h-1 bg-slate-700 group-hover:bg-blue-400 group-hover:scale-x-125 rounded-full transition-all"></div>
+ <div className="w-8 h-1 bg-gray-300 group-hover:bg-emerald-400 group-hover:scale-x-125 rounded-full transition-all"></div>
  </div>
 
  {/* Camera Subpane */}

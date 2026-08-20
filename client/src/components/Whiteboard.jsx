@@ -255,48 +255,48 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  };
 
  return (
- <div className="h-full w-full flex flex-col rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl font-sans">
+ <div className="h-full w-full flex flex-col rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-xl font-sans">
  {/* Toolbar */}
- <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-900 border-b border-slate-800 shrink-0">
- <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+ <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-white border-b border-gray-200 shrink-0">
+ <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
  <button 
  onClick={() => setTool('pen')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='pen' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='pen' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Pen"
  >
  <Pen className="h-3.5 w-3.5" />
  </button>
  <button 
  onClick={() => setTool('line')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='line' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='line' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Line"
  >
  <Minus className="h-3.5 w-3.5" />
  </button>
  <button 
  onClick={() => setTool('rect')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='rect' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='rect' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Rectangle"
  >
  <Square className="h-3.5 w-3.5" />
  </button>
  <button 
  onClick={() => setTool('circle')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='circle' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='circle' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Circle"
  >
  <Circle className="h-3.5 w-3.5" />
  </button>
  <button 
  onClick={() => setTool('text')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='text' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='text' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Text"
  >
  <Type className="h-3.5 w-3.5" />
  </button>
  <button 
  onClick={() => setTool('eraser')} 
- className={`p-1.5 rounded-md transition-colors ${tool ==='eraser' ?'bg-blue-600 text-white' :'text-slate-400 hover:text-slate-200'}`}
+ className={`p-1.5 rounded-md transition-colors ${tool ==='eraser' ?'bg-emerald-600 text-white' :'text-gray-600 hover:text-gray-900'}`}
  title="Eraser"
  >
  <Eraser className="h-3.5 w-3.5" />
@@ -304,12 +304,12 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  </div>
 
  {/* Color Palette Chips */}
- <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+ <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
  {COLORS.map((c) => (
  <button
  key={c}
  onClick={() => setColor(c)}
- className={`w-4 h-4 rounded-full transition-transform ${color === c ?'scale-125 ring-2 ring-blue-400' :'hover:scale-110 opacity-80'}`}
+ className={`w-4 h-4 rounded-full transition-transform ${color === c ?'scale-125 ring-2 ring-emerald-400' :'hover:scale-110 opacity-80'}`}
  style={{ backgroundColor: c }}
  />
  ))}
@@ -324,7 +324,7 @@ const Whiteboard = ({ roomId ='default-room' }) => {
 
  {/* Stroke Size Slider & Clear */}
  <div className="flex items-center gap-2">
- <div className="flex items-center gap-1 text-slate-400 text-xs bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+ <div className="flex items-center gap-1 text-gray-600 text-xs bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
  <span className="text-[10px]">Size</span>
  <input 
  type="range" 
@@ -332,13 +332,13 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  max="12" 
  value={size} 
  onChange={(e) => setSize(Number(e.target.value))} 
- className="w-14 accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded"
+ className="w-14 accent-emerald-500 cursor-pointer h-1.5 bg-gray-200 rounded"
  />
  </div>
 
  <button 
  onClick={clearBoard} 
- className="flex items-center gap-1 px-2.5 py-1 text-xs text-slate-400 hover:text-red-400 bg-slate-950 hover:bg-red-500/10 border border-slate-800 rounded-lg transition-colors"
+ className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-600 hover:text-red-400 bg-gray-50 hover:bg-red-100 border border-gray-200 rounded-lg transition-colors"
  title="Clear whiteboard"
  >
  <Trash2 className="h-3 w-3" />
@@ -350,9 +350,9 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  {/* Canvas Area with subtle grid pattern */}
  <div 
  ref={containerRef} 
- className="flex-grow w-full h-full relative overflow-hidden bg-[#0e131f]"
+ className="flex-grow w-full h-full relative overflow-hidden bg-white"
  style={{ 
- backgroundImage:'radial-gradient(#1e293b 1px, transparent 1px)', 
+ backgroundImage:'radial-gradient(#e5e7eb 1px, transparent 1px)', 
  backgroundSize:'24px 24px' 
  }}
  >

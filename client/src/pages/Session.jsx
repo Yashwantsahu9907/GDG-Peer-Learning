@@ -391,22 +391,22 @@ const Session = () => {
  };
 
  return (
- <div className="fixed inset-0 pt-16 z-40 bg-slate-950 flex flex-col overflow-hidden text-slate-100 font-sans">
+ <div className="fixed inset-0 pt-16 z-40 bg-gray-100 flex flex-col overflow-hidden text-gray-900 font-sans">
  
  {/* 1. Header Navigation Bar */}
- <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
+ <header className="h-16 border-b border-gray-200 bg-white/90 backdrop-blur flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
  <div className="flex items-center gap-3">
  <div className="flex items-center gap-2">
  <span className="relative flex h-3 w-3">
  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
  </span>
- <h1 className="font-bold text-slate-100 text-sm sm:text-base hidden md:block">
+ <h1 className="font-bold text-gray-900 text-sm sm:text-base hidden md:block">
  Peer Collaboration Workspace
  </h1>
  </div>
 
- <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300 text-xs font-mono">
+ <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100/80 border border-gray-300 text-gray-700 text-xs font-mono">
  <span>Room: {id}</span>
  <button 
  onClick={handleCopyLink} 
@@ -425,7 +425,7 @@ const Session = () => {
 
  {/* Media & Session Controls */}
  <div className="flex items-center gap-3 sm:gap-4">
- <div className="text-slate-300 font-mono font-medium text-xs sm:text-sm bg-slate-950 px-3 py-1 rounded-md border border-slate-800 shadow-inner">
+ <div className="text-gray-700 font-mono font-medium text-xs sm:text-sm bg-gray-100 px-3 py-1 rounded-md border border-gray-200 shadow-inner">
  {elapsedTime}
  </div>
 
@@ -433,7 +433,7 @@ const Session = () => {
  <button 
  onClick={toggleMute}
  title={isMuted ?'Unmute microphone' :'Mute microphone'}
- className={`p-2 sm:p-2.5 rounded-full transition-colors ${isMuted ?'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30' :'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+ className={`p-2 sm:p-2.5 rounded-full transition-colors ${isMuted ?'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30' :'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
  >
  {isMuted ? <MicOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
  </button>
@@ -441,7 +441,7 @@ const Session = () => {
  <button 
  onClick={toggleVideo}
  title={!isVideoOn ?'Turn camera on' :'Turn camera off'}
- className={`p-2 sm:p-2.5 rounded-full transition-colors ${!isVideoOn ?'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30' :'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+ className={`p-2 sm:p-2.5 rounded-full transition-colors ${!isVideoOn ?'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30' :'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
  >
  {!isVideoOn ? <VideoOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Video className="h-4 w-4 sm:h-5 sm:w-5" />}
  </button>
@@ -449,12 +449,12 @@ const Session = () => {
  <button 
  onClick={toggleScreenShare}
  title={isScreenSharing ?'Stop sharing screen' :'Share screen'}
- className={`p-2 sm:p-2.5 rounded-full transition-colors ${isScreenSharing ?'bg-blue-600 text-white shadow-lg shadow-blue-500/30' :'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+ className={`p-2 sm:p-2.5 rounded-full transition-colors ${isScreenSharing ?'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' :'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
  >
  <Monitor className="h-4 w-4 sm:h-5 sm:w-5" />
  </button>
 
- <div className="w-px h-6 bg-slate-800 mx-1"></div>
+ <div className="w-px h-6 bg-gray-100 mx-1"></div>
 
  <button 
  onClick={handleEndSession} 
@@ -471,20 +471,20 @@ const Session = () => {
  <div className="flex-grow flex w-full overflow-hidden">
  
  {/* LEFT WORKSPACE (68%) */}
- <div className="w-[68%] border-r border-slate-800 flex flex-col bg-[#1e1e1e] overflow-hidden">
+ <div className="w-[68%] border-r border-gray-200 flex flex-col bg-white overflow-hidden">
  
  {/* Workspace Tab Header */}
- <div className="flex items-center justify-between px-4 h-12 bg-slate-900 border-b border-slate-800 shrink-0">
+ <div className="flex items-center justify-between px-4 h-12 bg-white border-b border-gray-200 shrink-0">
  <div className="flex items-center gap-2">
  <button 
  onClick={() => setActiveMainTab('editor')}
- className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${activeMainTab ==='editor' ?'bg-slate-800 text-blue-400 border border-slate-700' :'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}`}
+ className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${activeMainTab ==='editor' ?'bg-gray-100 text-emerald-400 border border-gray-300' :'text-gray-600 hover:text-gray-800 hover:bg-gray-100/40'}`}
  >
  <Code2 className="h-4 w-4" /> Code Editor
  </button>
  <button 
  onClick={() => setActiveMainTab('whiteboard')}
- className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${activeMainTab ==='whiteboard' ?'bg-slate-800 text-emerald-400 border border-slate-700' :'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}`}
+ className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${activeMainTab ==='whiteboard' ?'bg-gray-100 text-emerald-400 border border-gray-300' :'text-gray-600 hover:text-gray-800 hover:bg-gray-100/40'}`}
  >
  <PenTool className="h-4 w-4" /> Whiteboard
  </button>
@@ -494,11 +494,11 @@ const Session = () => {
  {activeMainTab ==='editor' && (
  <div className="flex items-center gap-3">
  <div className="flex items-center gap-1.5">
- <span className="text-[11px] text-slate-400 hidden sm:inline">Language:</span>
+ <span className="text-[11px] text-gray-600 hidden sm:inline">Language:</span>
  <select 
  value={language}
  onChange={(e) => handleLanguageChange(e.target.value)}
- className="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-md px-2.5 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
+ className="bg-gray-100 border border-gray-200 text-gray-800 text-xs rounded-md px-2.5 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
  >
  <option value="javascript">JavaScript (Node.js)</option>
  <option value="python">Python 3</option>
@@ -509,7 +509,7 @@ const Session = () => {
 
  <button
  onClick={() => setShowConsole(!showConsole)}
- className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${showConsole ?'bg-slate-800 text-slate-200 border border-slate-700' :'text-slate-400 hover:text-slate-200'}`}
+ className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${showConsole ?'bg-gray-100 text-gray-800 border border-gray-300' :'text-gray-600 hover:text-gray-800'}`}
  title="Toggle console output"
  >
  <Terminal className="h-3.5 w-3.5" />
@@ -529,14 +529,14 @@ const Session = () => {
  </div>
 
  {/* Editor / Whiteboard Content */}
- <div className="flex-grow flex flex-col relative overflow-hidden bg-[#1e1e1e]">
+ <div className="flex-grow flex flex-col relative overflow-hidden bg-white">
  {activeMainTab ==='editor' ? (
  <div className="flex-grow flex flex-col relative overflow-hidden">
  <div className="flex-grow relative">
  <Editor
  height="100%"
  language={language}
- theme="vs-dark"
+ theme="light"
  value={code}
  onChange={handleEditorChange}
  onMount={(editor) => { editorRef.current = editor; }}
@@ -554,17 +554,17 @@ const Session = () => {
 
  {/* Integrated Interactive Console Output Drawer */}
  {showConsole && (
- <div className="h-44 border-t border-slate-800 bg-[#141414] flex flex-col shrink-0 animate-in slide-in-from-bottom duration-150">
- <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+ <div className="h-44 border-t border-gray-200 bg-gray-50 flex flex-col shrink-0 animate-in slide-in-from-bottom duration-150">
+ <div className="px-4 py-2 bg-white border-b border-gray-200 flex items-center justify-between">
  <div className="flex items-center gap-2">
- <Terminal className="h-3.5 w-3.5 text-slate-400" />
- <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Execution Output</span>
+ <Terminal className="h-3.5 w-3.5 text-gray-600" />
+ <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Execution Output</span>
  </div>
  <div className="flex items-center gap-2">
- <button onClick={() => setExecutionOutput('')} className="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1">
+ <button onClick={() => setExecutionOutput('')} className="text-gray-600 hover:text-gray-800 text-xs flex items-center gap-1">
  <Trash2 className="h-3 w-3" /> Clear
  </button>
- <button onClick={() => setShowConsole(false)} className="text-slate-400 hover:text-slate-200 text-xs ml-2">
+ <button onClick={() => setShowConsole(false)} className="text-gray-600 hover:text-gray-800 text-xs ml-2">
  ✕
  </button>
  </div>
@@ -575,14 +575,14 @@ const Session = () => {
  {executionOutput}
  </pre>
  ) : (
- <span className="text-slate-500 italic">Click'Run' to execute code and see stdout/stderr here...</span>
+ <span className="text-gray-500 italic">Click'Run' to execute code and see stdout/stderr here...</span>
  )}
  </div>
  </div>
  )}
  </div>
  ) : (
- <div className="w-full h-full p-4 bg-slate-950">
+ <div className="w-full h-full p-4 bg-gray-100">
  <Whiteboard roomId={id} />
  </div>
  )}
@@ -590,7 +590,7 @@ const Session = () => {
  </div>
 
  {/* RIGHT COLLABORATION PANEL (32%) */}
- <div className="w-[32%] flex flex-col bg-slate-950 border-l border-slate-800">
+ <div className="w-[32%] flex flex-col bg-gray-100 border-l border-gray-200">
  
  {/* Top Panel Content (Chat, Video, Notes) */}
  <div className="flex-grow flex flex-col overflow-hidden">
@@ -598,12 +598,12 @@ const Session = () => {
  {/* 1. CHAT PANEL */}
  {activePanelTab ==='chat' && (
  <div className="flex-grow flex flex-col overflow-hidden">
- <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+ <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
  <div className="flex items-center gap-2">
- <MessageSquare className="h-4 w-4 text-blue-400" />
- <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Session Chat</span>
+ <MessageSquare className="h-4 w-4 text-emerald-400" />
+ <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Session Chat</span>
  </div>
- <span className="text-[11px] text-slate-400">{messages.length} messages</span>
+ <span className="text-[11px] text-gray-600">{messages.length} messages</span>
  </div>
 
  <div className="flex-grow p-4 overflow-y-auto space-y-3.5 custom-scrollbar">
@@ -612,19 +612,19 @@ const Session = () => {
  return (
  <div key={msg.id} className={`flex flex-col ${msg.isSystem ?'items-center my-1' : isCurrentUser ?'items-end' :'items-start'}`}>
  {msg.isSystem ? (
- <span className="text-[11px] text-slate-400 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-800 text-center">
+ <span className="text-[11px] text-gray-600 bg-white/90 px-3 py-1 rounded-full border border-gray-200 text-center">
  {msg.text}
  </span>
  ) : (
  <>
  <div className="flex items-center gap-1.5 mb-1 mx-1">
- <span className="text-[11px] font-semibold text-slate-300">{msg.senderName || msg.sender}</span>
- <span className="text-[10px] text-slate-500">{msg.time}</span>
+ <span className="text-[11px] font-semibold text-gray-700">{msg.senderName || msg.sender}</span>
+ <span className="text-[10px] text-gray-500">{msg.time}</span>
  </div>
  <div className={`px-3 py-2 rounded-2xl text-xs sm:text-sm max-w-[85%] break-words leading-relaxed shadow-sm ${
  isCurrentUser 
- ?'bg-blue-600 text-white rounded-tr-none' 
- :'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700'
+ ?'bg-emerald-600 text-white rounded-tr-none' 
+ :'bg-gray-100 text-gray-900 rounded-tl-none border border-gray-300'
  }`}>
  {msg.text}
  </div>
@@ -638,25 +638,25 @@ const Session = () => {
 
  {/* Typing Indicator */}
  {peerTypingInfo && (
- <div className="px-4 py-1 text-[11px] text-blue-400 italic bg-slate-900/50">
+ <div className="px-4 py-1 text-[11px] text-emerald-400 italic bg-white/50">
  {peerTypingInfo}
  </div>
  )}
 
  {/* Chat Input Form */}
- <div className="p-3 border-t border-slate-800 bg-slate-900/80">
+ <div className="p-3 border-t border-gray-200 bg-white/80">
  <form onSubmit={handleSendMessage} className="relative flex items-center">
  <input 
  type="text" 
  value={chatMessage}
  onChange={handleChatInputChange}
  placeholder="Type a message or code hint..." 
- className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+ className="w-full bg-gray-100 border border-gray-300 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-gray-800 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
  />
  <button 
  type="submit" 
  disabled={!chatMessage.trim()}
- className="absolute right-1.5 p-2 text-blue-400 hover:text-blue-300 disabled:text-slate-600 disabled:hover:text-slate-600 transition-colors"
+ className="absolute right-1.5 p-2 text-emerald-400 hover:text-emerald-300 disabled:text-gray-400 disabled:hover:text-gray-400 transition-colors"
  >
  <Send className="h-4 w-4" />
  </button>
@@ -668,33 +668,33 @@ const Session = () => {
  {/* 2. VIDEO STREAM PANEL */}
  {activePanelTab ==='video' && (
  <div className="flex-grow flex flex-col p-4 gap-4 overflow-y-auto custom-scrollbar">
- <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Live Video Stream</div>
+ <div className="text-xs font-bold text-gray-600 uppercase tracking-wider">Live Video Stream</div>
  
  {/* Remote Peer Video */}
- <div className="relative w-full aspect-video rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg group">
- <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover bg-slate-800"></video>
+ <div className="relative w-full aspect-video rounded-xl bg-white border border-gray-200 overflow-hidden shadow-lg group">
+ <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover bg-gray-100"></video>
  {!remoteVideoRef.current?.srcObject && (
- <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-slate-500 gap-2">
- <Users className="h-10 w-10 text-slate-600 animate-pulse" />
+ <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-gray-500 gap-2">
+ <Users className="h-10 w-10 text-gray-400 animate-pulse" />
  <span className="text-xs">Waiting for peer video stream...</span>
  </div>
  )}
- <div className="absolute bottom-2.5 left-2.5 bg-slate-900/80 backdrop-blur px-2 py-0.5 rounded border border-slate-700/50 flex items-center gap-1.5">
- <span className="text-xs font-medium text-slate-200">Peer Camera</span>
+ <div className="absolute bottom-2.5 left-2.5 bg-white/80 backdrop-blur px-2 py-0.5 rounded border border-gray-300/50 flex items-center gap-1.5">
+ <span className="text-xs font-medium text-gray-800">Peer Camera</span>
  </div>
  </div>
 
  {/* Local User Video */}
- <div className="relative w-full aspect-video rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg group">
- <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover bg-slate-800 ${!isVideoOn && !isScreenSharing ?'hidden' :''}`}></video>
+ <div className="relative w-full aspect-video rounded-xl bg-white border border-gray-200 overflow-hidden shadow-lg group">
+ <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover bg-gray-100 ${!isVideoOn && !isScreenSharing ?'hidden' :''}`}></video>
  {!isVideoOn && !isScreenSharing && (
- <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-slate-500 gap-2">
- <VideoOff className="h-10 w-10 text-slate-600" />
+ <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-gray-500 gap-2">
+ <VideoOff className="h-10 w-10 text-gray-400" />
  <span className="text-xs">Your camera is off</span>
  </div>
  )}
- <div className="absolute bottom-2.5 left-2.5 bg-slate-900/80 backdrop-blur px-2 py-0.5 rounded border border-slate-700/50 flex items-center gap-2">
- <span className="text-xs font-medium text-slate-200">You ({user?.name ||'Developer'})</span>
+ <div className="absolute bottom-2.5 left-2.5 bg-white/80 backdrop-blur px-2 py-0.5 rounded border border-gray-300/50 flex items-center gap-2">
+ <span className="text-xs font-medium text-gray-800">You ({user?.name ||'Developer'})</span>
  {isMuted ? <MicOff className="h-3 w-3 text-red-400" /> : <Mic className="h-3 w-3 text-emerald-400" />}
  </div>
  </div>
@@ -703,11 +703,11 @@ const Session = () => {
 
  {/* 3. COLLABORATIVE NOTES PANEL */}
  {activePanelTab ==='notes' && (
- <div className="flex-grow flex flex-col overflow-hidden bg-slate-950">
- <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+ <div className="flex-grow flex flex-col overflow-hidden bg-gray-100">
+ <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
  <div className="flex items-center gap-2">
  <FileText className="h-4 w-4 text-emerald-400" />
- <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Shared Session Notes</span>
+ <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Shared Session Notes</span>
  </div>
  <span className="text-[11px] text-emerald-400 font-medium">⚡ Real-time Synced</span>
  </div>
@@ -716,7 +716,7 @@ const Session = () => {
  value={notes}
  onChange={handleNotesChange}
  placeholder="Write collaborative markdown notes here..."
- className="flex-grow w-full bg-slate-900/50 border border-slate-800 rounded-xl p-3 resize-none outline-none text-xs sm:text-sm text-slate-200 font-mono leading-relaxed focus:border-emerald-500/50 transition-colors"
+ className="flex-grow w-full bg-white/50 border border-gray-200 rounded-xl p-3 resize-none outline-none text-xs sm:text-sm text-gray-800 font-mono leading-relaxed focus:border-emerald-500/50 transition-colors"
  />
  </div>
  </div>
@@ -724,35 +724,35 @@ const Session = () => {
  </div>
 
  {/* Bottom Panel Navigation Bar */}
- <div className="h-14 border-t border-slate-800 bg-slate-900 flex items-center justify-around shrink-0 px-2">
+ <div className="h-14 border-t border-gray-200 bg-white flex items-center justify-around shrink-0 px-2">
  <button 
  onClick={() => setActivePanelTab('chat')}
- className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative ${activePanelTab ==='chat' ?'text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative ${activePanelTab ==='chat' ?'text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  >
  <MessageSquare className="h-4 w-4" />
  <span className="text-[10px] uppercase tracking-wider">Chat</span>
  {unreadChatCount > 0 && (
- <span className="absolute top-2 right-6 px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[9px] font-bold">
+ <span className="absolute top-2 right-6 px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold">
  {unreadChatCount}
  </span>
  )}
  </button>
 
- <div className="w-px h-6 bg-slate-800"></div>
+ <div className="w-px h-6 bg-gray-100"></div>
 
  <button 
  onClick={() => setActivePanelTab('video')}
- className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activePanelTab ==='video' ?'text-blue-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activePanelTab ==='video' ?'text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  >
  <Video className="h-4 w-4" />
  <span className="text-[10px] uppercase tracking-wider">Video</span>
  </button>
 
- <div className="w-px h-6 bg-slate-800"></div>
+ <div className="w-px h-6 bg-gray-100"></div>
 
  <button 
  onClick={() => setActivePanelTab('notes')}
- className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activePanelTab ==='notes' ?'text-emerald-400 font-semibold' :'text-slate-400 hover:text-slate-200'}`}
+ className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activePanelTab ==='notes' ?'text-emerald-400 font-semibold' :'text-gray-600 hover:text-gray-800'}`}
  >
  <FileText className="h-4 w-4" />
  <span className="text-[10px] uppercase tracking-wider">Notes</span>
