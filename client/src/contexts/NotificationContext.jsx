@@ -103,6 +103,15 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [user, fetchNotifications, fetchUnreadCount]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchNotifications();
+      fetchUnreadCount();
+    };
+    window.addEventListener('notifications:refresh', handleRefresh);
+    return () => window.removeEventListener('notifications:refresh', handleRefresh);
+  }, [fetchNotifications, fetchUnreadCount]);
+
   return (
     <NotificationContext.Provider value={{
       notifications,
