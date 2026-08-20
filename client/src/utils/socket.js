@@ -50,9 +50,13 @@ class SocketService {
  }
  }
 
- off(event) {
+ off(event, callback) {
  if (this.socket) {
+ if (callback) {
+ this.socket.off(event, callback);
+ } else {
  this.socket.off(event);
+ }
  }
  }
 }

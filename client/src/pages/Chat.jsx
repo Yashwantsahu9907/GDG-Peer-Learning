@@ -37,12 +37,30 @@ const Chat = () => {
 
  const handleReceivePersonal = (msg) => {
  setPersonalMessages((prev) => [...prev, msg]);
+ setContacts((prev) => {
+ const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+ const exists = prev.find(c => c.userId === otherId);
+ const isMine = msg.senderId === currentUserId;
+ 
+ if (exists) {
+ return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
+ } else {
+ return [{
+ userId: otherId,
+ name: isMine ? 'User' : msg.senderName,
+ lastMessage: msg.text,
+ lastMessageIsMine: isMine,
+ timestamp: msg.timestamp
+ }, ...prev];
+ }
+ });
  };
 
  socketService.on('receive_global_message', handleReceiveGlobal);
  socketService.on('receive_personal_message', handleReceivePersonal);
 
  return () => {
+ socketService.off('connect', onConnect);
  socketService.off('receive_global_message', handleReceiveGlobal);
  socketService.off('receive_personal_message', handleReceivePersonal);
  };
