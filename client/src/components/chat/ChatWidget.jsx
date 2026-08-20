@@ -1,20 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { socketService } from '../../utils/socket';
-import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle } from 'lucide-react';
+import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2, CornerDownRight } from 'lucide-react';
 
 const ChatWidget = ({ user, onClose }) => {
+  const currentUserId = user?._id || user?.userId || 'guest';
+  const currentUserName = user?.name || 'Guest User';
+  const serverUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
   const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'
   const [globalMessages, setGlobalMessages] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [personalMessages, setPersonalMessages] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   
   const messagesEndRef = useRef(null);
-  const currentUserId = user?._id || user?.userId || user?.id || 'guest';
-  const currentUserName = user?.name || 'Developer';
+  const selectedContactRef = useRef(null);
 
-  const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+  useEffect(() => {
+    selectedContactRef.current = selectedContact;
+  }, [selectedContact]);
 
   // 1. Initialize Socket Connection & Listeners
   useEffect(() => {
@@ -36,29 +43,61 @@ const ChatWidget = ({ user, onClose }) => {
     };
 
     const handleReceivePersonal = (msg) => {
-      setPersonalMessages((prev) => [...prev, msg]);
+      // If we're currently chatting with the person this message is from/to
+      setPersonalMessages((prev) => {
+        return [...prev, msg];
+      });
       
       setContacts((prev) => {
         const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
         const exists = prev.find(c => c.userId === otherId);
+        const isMine = msg.senderId === currentUserId;
+        
         if (exists) {
-          return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, timestamp: msg.timestamp } : c);
+          return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
         } else {
+          // Try to get name from current selected contact if we are the sender
+          let newName = isMine ? 'User' : msg.senderName;
+          if (isMine && selectedContactRef.current?.userId === otherId) {
+            newName = selectedContactRef.current.name;
+          }
+          
           return [{
             userId: otherId,
-            name: msg.senderId === currentUserId ? 'Peer' : msg.senderName,
+            name: newName,
             lastMessage: msg.text,
+            lastMessageIsMine: isMine,
             timestamp: msg.timestamp
           }, ...prev];
         }
       });
     };
 
+        const handleMessageEdited = (editedMsg) => {
+      if (editedMsg.chatType === 'global') {
+        setGlobalMessages(prev => prev.map(m => m._id === editedMsg._id ? editedMsg : m));
+      } else {
+        setPersonalMessages(prev => prev.map(m => m._id === editedMsg._id ? editedMsg : m));
+      }
+    };
+
+    const handleMessageDeleted = ({ messageId, chatType }) => {
+      if (chatType === 'global') {
+        setGlobalMessages(prev => prev.filter(m => m._id !== messageId));
+      } else {
+        setPersonalMessages(prev => prev.filter(m => m._id !== messageId));
+      }
+    };
+
     socketService.on('receive_global_message', handleReceiveGlobal);
+    socketService.on('message_edited', handleMessageEdited);
+    socketService.on('message_deleted', handleMessageDeleted);
     socketService.on('receive_personal_message', handleReceivePersonal);
 
     return () => {
       socketService.off('receive_global_message', handleReceiveGlobal);
+      socketService.off('message_edited', handleMessageEdited);
+      socketService.off('message_deleted', handleMessageDeleted);
       socketService.off('receive_personal_message', handleReceivePersonal);
     };
   }, [currentUserId]);
@@ -111,19 +150,34 @@ const ChatWidget = ({ user, onClose }) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
+    if (editingMessage) {
+      socketService.emit('edit_message', {
+        messageId: editingMessage._id,
+        senderId: currentUserId,
+        text: inputMessage.trim()
+      });
+      setEditingMessage(null);
+      setInputMessage('');
+      return;
+    }
+
     if (activeTab === 'global') {
       socketService.emit('send_global_message', {
         senderId: currentUserId,
         senderName: currentUserName,
-        text: inputMessage.trim()
+        text: inputMessage.trim(),
+        replyTo: replyingTo ? { messageId: replyingTo._id, senderName: replyingTo.senderName, text: replyingTo.text } : null
       });
+      setReplyingTo(null);
     } else if (activeTab === 'personal' && selectedContact) {
       socketService.emit('send_personal_message', {
         senderId: currentUserId,
         senderName: currentUserName,
         receiverId: selectedContact.userId,
-        text: inputMessage.trim()
+        text: inputMessage.trim(),
+        replyTo: replyingTo ? { messageId: replyingTo._id, senderName: replyingTo.senderName, text: replyingTo.text } : null
       });
+      setReplyingTo(null);
     }
     
     setInputMessage('');
@@ -148,8 +202,7 @@ const ChatWidget = ({ user, onClose }) => {
   );
 
   return (
-    <div className="absolute right-0 top-12 w-[92vw] sm:w-96 h-[520px] max-h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
-      
+    <div className="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:top-12 w-full sm:w-96 h-[100dvh] sm:h-[500px] sm:max-h-[85vh] bg-white sm:border border-[var(--color-border)] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
         {activeTab === 'personal' ? (
@@ -180,7 +233,7 @@ const ChatWidget = ({ user, onClose }) => {
 
       {/* Tabs */}
       {activeTab !== 'personal' && (
-        <div className="flex border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] shrink-0">
+        <div className="flex border-b border-[var(--color-border)] bg-white shrink-0">
           <button 
             className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${activeTab === 'global' ? 'text-[var(--color-accent)] border-b-2 border-[var(--color-accent)] bg-[var(--color-accent-light)]/20' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]'}`}
             onClick={() => setActiveTab('global')}
@@ -197,7 +250,7 @@ const ChatWidget = ({ user, onClose }) => {
       )}
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-3.5 bg-[var(--color-bg-primary)] space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3.5 bg-white space-y-3 custom-scrollbar">
         
         {/* GLOBAL CHAT TAB */}
         {activeTab === 'global' && (
@@ -209,24 +262,48 @@ const ChatWidget = ({ user, onClose }) => {
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Say hi to developers around the world.</p>
               </div>
             ) : (
-              globalMessages.map((msg, idx) => {
-                const isSelf = msg.senderId === currentUserId;
-                return (
-                  <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
-                    <div className="flex items-center gap-1.5 mb-1 mx-1">
-                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)]">{msg.senderName}</span>
-                      <span className="text-[9px] text-[var(--color-text-muted)]">{formatTime(msg.timestamp)}</span>
-                    </div>
-                    <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words ${
-                      isSelf 
-                        ? 'bg-[var(--color-accent)] text-white rounded-tr-none' 
-                        : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-none'
-                    }`}>
-                      {msg.text}
-                    </div>
+              globalMessages.map((msg, idx) => (
+                <div 
+                  key={msg._id || idx} 
+                  className={`flex flex-col ${msg.senderId === currentUserId ? 'items-end' : 'items-start'} group`}
+                  onClick={() => setActiveMessageId(activeMessageId === (msg._id || idx) ? null : (msg._id || idx))}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
+                    {msg.senderId !== currentUserId && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleContactClick({ userId: msg.senderId, name: msg.senderName }); }}
+                        className={`transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}
+                        title="Reply Privately"
+                      >
+                        <MessageSquare className="w-3 h-3" /> Reply Privately
+                      </button>
+                    )}
+                    {msg.senderId === currentUserId && (
+                      <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500 text-[10px] flex items-center gap-1" title="Edit">
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500 text-[10px] flex items-center gap-1" title="Delete">
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); setReplyingTo(msg); }} className={`transition-opacity text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] flex items-center gap-1 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`} title="Reply">
+                      <CornerDownRight className="w-3 h-3" /> Reply
+                    </button>
                   </div>
-                );
-              })
+                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm cursor-pointer flex flex-col gap-1 ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                    {msg.replyTo && (
+                      <div className={`px-2 py-1 text-[10px] rounded border-l-2 opacity-80 ${msg.senderId === currentUserId ? 'bg-white/20 border-white text-white' : 'bg-black/5 border-[var(--color-accent)] text-[var(--color-text-secondary)]'}`}>
+                        <div className="font-bold">{msg.replyTo.senderName}</div>
+                        <div className="truncate">{msg.replyTo.text}</div>
+                      </div>
+                    )}
+                    <span>{msg.text}</span>
+                  </div>
+                </div>
+              ))
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -256,7 +333,10 @@ const ChatWidget = ({ user, onClose }) => {
                       <span className="font-bold text-xs text-[var(--color-text-primary)] truncate">{contact.name}</span>
                       <span className="text-[9px] text-[var(--color-text-muted)] shrink-0">{formatTime(contact.timestamp)}</span>
                     </div>
-                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{contact.lastMessage || 'Click to open conversation'}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] truncate">
+                      {contact.lastMessageIsMine && <span className="font-semibold text-[var(--color-text-primary)] opacity-75">You: </span>}
+                      {contact.lastMessage}
+                    </p>
                   </div>
                 </div>
               ))
@@ -277,14 +357,41 @@ const ChatWidget = ({ user, onClose }) => {
                currentPersonalMsgs.map((msg, idx) => {
                 const isSelf = msg.senderId === currentUserId;
                 return (
-                  <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
-                    <span className="text-[9px] text-[var(--color-text-muted)] mx-1 mb-1">{formatTime(msg.timestamp)}</span>
-                    <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words ${
+                  <div 
+                    key={msg._id || idx} 
+                    className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'} group`}
+                    onClick={() => setActiveMessageId(activeMessageId === (msg._id || idx) ? null : (msg._id || idx))}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] text-[var(--color-text-muted)] mx-1">{formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
+                      <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+                        {isSelf && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500" title="Delete">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); setReplyingTo(msg); }} className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" title="Reply">
+                          <CornerDownRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed shadow-sm break-words flex flex-col gap-1 ${
                       isSelf 
                         ? 'bg-[var(--color-accent)] text-white rounded-tr-none' 
                         : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-none'
                     }`}>
-                      {msg.text}
+                      {msg.replyTo && (
+                        <div className={`px-2 py-1 text-[10px] rounded border-l-2 opacity-80 ${isSelf ? 'bg-white/20 border-white text-white' : 'bg-black/5 border-[var(--color-accent)] text-[var(--color-text-secondary)]'}`}>
+                          <div className="font-bold">{msg.replyTo.senderName}</div>
+                          <div className="truncate">{msg.replyTo.text}</div>
+                        </div>
+                      )}
+                      <span>{msg.text}</span>
                     </div>
                   </div>
                 );
@@ -298,12 +405,23 @@ const ChatWidget = ({ user, onClose }) => {
       {/* Input Area */}
       {activeTab !== 'contacts' && (
         <form onSubmit={handleSendMessage} className="p-3 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
+          {replyingTo && (
+            <div className="mb-2 bg-[var(--color-bg-primary)] border-l-2 border-[var(--color-accent)] px-2 py-1.5 flex justify-between items-start rounded-r-md">
+              <div className="flex flex-col truncate pr-2">
+                <span className="text-[10px] font-bold text-[var(--color-accent)]">Replying to {replyingTo.senderName}</span>
+                <span className="text-xs text-[var(--color-text-secondary)] truncate">{replyingTo.text}</span>
+              </div>
+              <button type="button" onClick={() => setReplyingTo(null)} className="text-[var(--color-text-muted)] hover:text-red-500 p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input 
               type="text" 
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={activeTab === 'global' ? "Chat with community..." : `Message ${selectedContact?.name || 'peer'}...`}
+              placeholder={editingMessage ? "Edit message..." : (activeTab === 'global' ? "Chat with community..." : `Message ${selectedContact?.name || 'peer'}...`)}
               className="flex-1 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-full px-3.5 py-2 text-xs sm:text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-slate-500"
             />
             <button 

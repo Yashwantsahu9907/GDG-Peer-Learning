@@ -1,5 +1,6 @@
 import express from 'express';
 import Message from '../models/Message.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -59,15 +60,28 @@ router.get('/contacts/:userId', async (req, res) => {
           userId: contactId,
           name: isSender ? 'Unknown' : msg.senderName, // We might not know the receiver's name directly from the msg if we only have their ID, but usually we can look it up
           lastMessage: msg.text,
+          lastMessageIsMine: isSender,
           timestamp: msg.timestamp
         });
       }
     });
     
-    // For contacts where we are the sender, we need their name. We could populate or just return what we have.
-    // For simplicity, let's just return the map values. The frontend can display it.
+    const contactsArray = Array.from(contactsMap.values());
     
-    res.status(200).json({ success: true, contacts: Array.from(contactsMap.values()) });
+    // Fetch names for 'Unknown' contacts
+    const unknownContactIds = contactsArray.filter(c => c.name === 'Unknown').map(c => c.userId);
+    if (unknownContactIds.length > 0) {
+      const users = await User.find({ _id: { $in: unknownContactIds } }, 'name');
+      const userMap = new Map(users.map(u => [u._id.toString(), u.name]));
+      
+      contactsArray.forEach(c => {
+        if (c.name === 'Unknown' && userMap.has(c.userId)) {
+          c.name = userMap.get(c.userId) || 'User';
+        }
+      });
+    }
+    
+    res.status(200).json({ success: true, contacts: contactsArray });
   } catch (error) {
     console.error('Error fetching chat contacts:', error);
     res.status(500).json({ success: false, message: 'Unable to fetch contacts' });
