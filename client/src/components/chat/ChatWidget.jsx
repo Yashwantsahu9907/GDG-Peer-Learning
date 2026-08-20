@@ -36,7 +36,7 @@ const ChatWidget = ({ user, onClose }) => {
       setGlobalMessages((prev) => [...prev, msg]);
     };
 
-    newSocket.on('receive_personal_message', (msg) => {
+    const handleReceivePersonal = (msg) => {
       // If we're currently chatting with the person this message is from/to
       setPersonalMessages((prev) => {
         return [...prev, msg];
@@ -238,8 +238,8 @@ const ChatWidget = ({ user, onClose }) => {
                   <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === user._id ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                     {msg.text}
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
             <div ref={messagesEndRef} />
           </div>
