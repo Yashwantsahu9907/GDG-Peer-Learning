@@ -13,6 +13,7 @@ const ChatWidget = ({ user, onClose }) => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [editingMessage, setEditingMessage] = useState(null);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   
   const messagesEndRef = useRef(null);
   const selectedContactRef = useRef(null);
@@ -257,30 +258,34 @@ const ChatWidget = ({ user, onClose }) => {
               </div>
             ) : (
               globalMessages.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.senderId === currentUserId ? 'items-end' : 'items-start'} group`}>
+                <div 
+                  key={msg._id || idx} 
+                  className={`flex flex-col ${msg.senderId === currentUserId ? 'items-end' : 'items-start'} group`}
+                  onClick={() => setActiveMessageId(activeMessageId === (msg._id || idx) ? null : (msg._id || idx))}
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] text-[var(--color-text-muted)] ml-1">{msg.senderName} • {formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
                     {msg.senderId !== currentUserId && (
                       <button
-                        onClick={() => handleContactClick({ userId: msg.senderId, name: msg.senderName })}
-                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
+                        onClick={(e) => { e.stopPropagation(); handleContactClick({ userId: msg.senderId, name: msg.senderName }); }}
+                        className={`transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}
                         title="Reply Privately"
                       >
                         <MessageSquare className="w-3 h-3" /> Reply
                       </button>
                     )}
                     {msg.senderId === currentUserId && (
-                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                        <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500 text-[10px] flex items-center gap-1" title="Edit">
+                      <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500 text-[10px] flex items-center gap-1" title="Edit">
                           <Pencil className="w-3 h-3" /> Edit
                         </button>
-                        <button onClick={() => socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId })} className="text-red-400 hover:text-red-500 text-[10px] flex items-center gap-1" title="Delete">
+                        <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500 text-[10px] flex items-center gap-1" title="Delete">
                           <Trash2 className="w-3 h-3" /> Delete
                         </button>
                       </div>
                     )}
                   </div>
-                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
+                  <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm cursor-pointer ${msg.senderId === currentUserId ? 'bg-[var(--color-accent)] text-white rounded-tr-sm' : 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-tl-sm'}`}>
                     {msg.text}
                   </div>
                 </div>
@@ -338,15 +343,19 @@ const ChatWidget = ({ user, onClose }) => {
                currentPersonalMsgs.map((msg, idx) => {
                 const isSelf = msg.senderId === currentUserId;
                 return (
-                  <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'} group`}>
+                  <div 
+                    key={msg._id || idx} 
+                    className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'} group`}
+                    onClick={() => setActiveMessageId(activeMessageId === (msg._id || idx) ? null : (msg._id || idx))}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[9px] text-[var(--color-text-muted)] mx-1">{formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
                       {isSelf && (
-                        <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                          <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
+                        <div className={`transition-opacity flex items-center gap-2 ${activeMessageId === (msg._id || idx) ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+                          <button onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button onClick={() => socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId })} className="text-red-400 hover:text-red-500" title="Delete">
+                          <button onClick={(e) => { e.stopPropagation(); socketService.emit('delete_message', { messageId: msg._id, senderId: currentUserId }); }} className="text-red-400 hover:text-red-500" title="Delete">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
