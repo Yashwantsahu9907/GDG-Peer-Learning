@@ -16,22 +16,95 @@ const generateToken = (res, userId, role) => {
 
 const handleDailyLoginReward = async (user) => {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  if (!user.lastLoginDate || user.lastLoginDate < today) {
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  if (!user.lastLoginDate) {
+    user.streak = 1;
+    user.longestStreak = Math.max(user.longestStreak || 1, 1);
+    user.gdgCoins = (user.gdgCoins || 0) + 1;
+    user.lastLoginDate = today;
+
     await User.updateOne(
       { _id: user._id },
       { 
-        $inc: { gdgCoins: 1 },
-        $set: { lastLoginDate: today }
+        $set: { 
+          streak: 1, 
+          longestStreak: user.longestStreak, 
+          lastLoginDate: today 
+        },
+        $inc: { gdgCoins: 1 }
       }
     );
-    user.gdgCoins = (user.gdgCoins || 0) + 1;
-    user.lastLoginDate = today;
     return true;
   }
-  return false;
+
+  const lastLogin = new Date(user.lastLoginDate);
+  const lastLoginDay = new Date(Date.UTC(lastLogin.getUTCFullYear(), lastLogin.getUTCMonth(), lastLogin.getUTCDate()));
+  
+  const diffTime = today.getTime() - lastLoginDay.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    // Already visited today; ensure streak has a default value if missing
+    if (!user.streak || user.streak < 1) {
+      user.streak = 1;
+      await User.updateOne({ _id: user._id }, { $set: { streak: 1 } });
+    }
+    return false;
+  } else if (diffDays === 1) {
+    // Consecutive day login - increment streak!
+    user.streak = (user.streak || 0) + 1;
+    user.longestStreak = Math.max(user.longestStreak || 1, user.streak);
+    user.gdgCoins = (user.gdgCoins || 0) + 1;
+    user.lastLoginDate = today;
+
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $set: { 
+          streak: user.streak, 
+          longestStreak: user.longestStreak, 
+          lastLoginDate: today 
+        },
+        $inc: { gdgCoins: 1 }
+      }
+    );
+    return true;
+  } else {
+    // Broken streak (more than 1 day missed) - reset streak to 1
+    user.streak = 1;
+    user.longestStreak = Math.max(user.longestStreak || 1, 1);
+    user.gdgCoins = (user.gdgCoins || 0) + 1;
+    user.lastLoginDate = today;
+
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $set: { 
+          streak: 1, 
+          longestStreak: user.longestStreak, 
+          lastLoginDate: today 
+        },
+        $inc: { gdgCoins: 1 }
+      }
+    );
+    return true;
+  }
 };
+
+const formatUserResponse = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  gdgCoins: user.gdgCoins,
+  streak: user.streak || 1,
+  longestStreak: user.longestStreak || user.streak || 1,
+  branch: user.branch,
+  semester: user.semester,
+  bio: user.bio || '',
+  website: user.website || '',
+});
 
 export const register = async (req, res) => {
   try {
@@ -51,19 +124,17 @@ export const register = async (req, res) => {
       enrollmentNumber,
       branch,
       semester,
+      streak: 1,
+      longestStreak: 1,
+      gdgCoins: 100,
+      lastLoginDate: new Date(),
     });
 
     if (user) {
       generateToken(res, user._id, user.role);
       res.status(201).json({
         success: true,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          gdgCoins: user.gdgCoins,
-        },
+        user: formatUserResponse(user),
       });
     } else {
       res.status(400).json({ success: false, message: 'Invalid user data' });
@@ -84,13 +155,7 @@ export const login = async (req, res) => {
       generateToken(res, user._id, user.role);
       res.status(200).json({
         success: true,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          gdgCoins: user.gdgCoins,
-        },
+        user: formatUserResponse(user),
       });
     } else {
       res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -113,7 +178,7 @@ export const getMe = async (req, res) => {
     const user = await User.findById(req.user.userId).select('-password');
     if (user) {
       await handleDailyLoginReward(user);
-      res.status(200).json({ success: true, user });
+      res.status(200).json({ success: true, user: formatUserResponse(user) });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -148,13 +213,7 @@ export const googleAuth = async (req, res) => {
       generateToken(res, user._id, user.role);
       res.status(200).json({
         success: true,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          gdgCoins: user.gdgCoins,
-        },
+        user: formatUserResponse(user),
       });
     } else {
       // Create new user with default random password since they use Google
@@ -167,18 +226,16 @@ export const googleAuth = async (req, res) => {
         gender: 'Other',
         branch: 'OTHER',
         semester: '1',
+        streak: 1,
+        longestStreak: 1,
+        gdgCoins: 100,
+        lastLoginDate: new Date(),
       });
 
       generateToken(res, user._id, user.role);
       res.status(201).json({
         success: true,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          gdgCoins: user.gdgCoins,
-        },
+        user: formatUserResponse(user),
       });
     }
   } catch (error) {
@@ -198,15 +255,7 @@ export const updateProfile = async (req, res) => {
       const updatedUser = await user.save();
       res.status(200).json({
         success: true,
-        user: {
-          _id: updatedUser._id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role,
-          gdgCoins: updatedUser.gdgCoins,
-          bio: updatedUser.bio,
-          website: updatedUser.website,
-        },
+        user: formatUserResponse(updatedUser),
       });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
