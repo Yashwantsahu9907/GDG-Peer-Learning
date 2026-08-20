@@ -48,6 +48,7 @@ const Register = () => {
       login(data.user);
       navigate('/profile');
     } catch (fetchError) {
+      console.error(fetchError);
       setError('Server error while trying to register.');
       setLoading(false);
     }

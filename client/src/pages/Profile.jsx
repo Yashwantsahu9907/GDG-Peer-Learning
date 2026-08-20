@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   MapPin, Link as LinkIcon,
   Users, Video, BookOpen, Star, Trophy, Clock,
-  CheckCircle2, Flame, Target, MessageSquare, Award,
+  CheckCircle2, Flame, Award,
   Calendar, Code, Zap, Edit3, Settings, Shield
 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ const Section = ({ title, children, action }) => (
 );
 
 // MOCK API Client
-const fetchProfileData = async (userId) => {
+const fetchProfileData = async (_userId) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({

@@ -9,11 +9,13 @@ import Meeting from './pages/Meeting';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Points from './pages/Points';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 import Session from './pages/Session';
+import Chat from './pages/Chat';
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
               <Route path="discover" element={<Discover />} />
               <Route path="bounties" element={<Bounties />} />
               <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               
@@ -34,6 +37,7 @@ function App() {
                 <Route path="session/:id" element={<Session />} />
                 <Route path="meeting" element={<Meeting />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="points" element={<Points />} />
               </Route>
             </Route>
           </Routes>

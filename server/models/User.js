@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
   gdgCoins: { type: Number, default: 100 },
   bio: { type: String, default: '' },
   website: { type: String, default: '' },
+  lastLoginDate: { type: Date },
 }, { timestamps: true });
 
 // Pre-save middleware to hash password

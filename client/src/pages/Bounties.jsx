@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Coins, CheckCircle, Clock, Plus, Tag, X } from 'lucide-react';
+import { Coins, CheckCircle, Clock, Plus, Tag, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -62,6 +62,7 @@ const Bounties = () => {
         toast.error(data.message || 'Failed to post bounty');
       }
     } catch (err) {
+      console.error('Error posting bounty:', err);
       toast.error('Error posting bounty');
     }
   };
@@ -88,6 +89,7 @@ const Bounties = () => {
         toast.error(data.message || 'Failed to resolve bounty');
       }
     } catch (err) {
+      console.error('Error resolving bounty:', err);
       toast.error('Error resolving bounty');
     }
   };
