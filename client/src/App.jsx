@@ -16,32 +16,38 @@ import { Toaster } from'react-hot-toast';
 import Session from'./pages/Session';
 import Chat from'./pages/Chat';
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 function App() {
- return (
- <AuthProvider>
- <Toaster position="top-right" toastOptions={{ style: { background:'#1e293b', color:'#f8fafc', border:'1px solid #334155' } }} />
- <BrowserRouter>
- <Routes>
- <Route path="/" element={<Layout />}>
- <Route index element={<Landing />} />
- <Route path="discover" element={<Discover />} />
- <Route path="bounties" element={<Bounties />} />
- <Route path="leaderboard" element={<Leaderboard />} />
- <Route path="chat" element={<Chat />} />
- <Route path="login" element={<Login />} />
- <Route path="register" element={<Register />} />
- 
- <Route element={<ProtectedRoute />}>
- <Route path="session/:id" element={<Session />} />
- <Route path="meeting" element={<Meeting />} />
- <Route path="profile" element={<Profile />} />
- <Route path="points" element={<Points />} />
- </Route>
- </Route>
- </Routes>
- </BrowserRouter>
- </AuthProvider>
- );
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <NotificationProvider>
+          <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
+          <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Landing />} />
+              <Route path="discover" element={<Discover />} />
+              <Route path="bounties" element={<Bounties />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="chat" element={<Chat />} />
+              <Route path="login" element={<Login />} />
+              <Route path="register" element={<Register />} />
+              
+              <Route element={<ProtectedRoute />}>
+                <Route path="session/:id" element={<Session />} />
+                <Route path="meeting" element={<Meeting />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="points" element={<Points />} />
+              </Route>
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        </NotificationProvider>
+      </ThemeProvider>
+    </AuthProvider>
+  );
 }
 
 export default App;
