@@ -1,21 +1,20 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import Landing from './pages/Landing';
-import Discover from './pages/Discover';
-import Bounties from './pages/Bounties';
-import Leaderboard from './pages/Leaderboard';
-import Meeting from './pages/Meeting';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import Points from './pages/Points';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import { Toaster } from 'react-hot-toast';
-import Session from './pages/Session';
-import Chat from './pages/Chat';
+import React from'react';
+import { BrowserRouter, Routes, Route } from'react-router-dom';
+import Layout from'./components/Layout';
+import Landing from'./pages/Landing';
+import Discover from'./pages/Discover';
+import Bounties from'./pages/Bounties';
+import Leaderboard from'./pages/Leaderboard';
+import Meeting from'./pages/Meeting';
+import Login from'./pages/Login';
+import Register from'./pages/Register';
+import Profile from'./pages/Profile';
+import Points from'./pages/Points';
+import { AuthProvider } from'./contexts/AuthContext';
+import ProtectedRoute from'./components/ProtectedRoute';
+import { Toaster } from'react-hot-toast';
+import Session from'./pages/Session';
+import Chat from'./pages/Chat';
 
 import { NotificationProvider } from './contexts/NotificationContext';
 

@@ -227,40 +227,30 @@ const Navbar = () => {
                 {link.name}
               </a>
             ))}
-            
-            <div className="flex items-center justify-between px-4 py-3 mt-4 border-t border-[var(--color-border)]">
-               <span className="text-base font-bold text-[var(--color-text-primary)]">Theme</span>
-               <button 
-                 onClick={toggleTheme}
-                 className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors rounded-xl bg-[var(--color-bg-secondary)]"
-               >
-                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-               </button>
-            </div>
 
             {!isLoggedIn && (
-              <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-[var(--color-border)]">
-                <Link 
-                  to="/login" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center px-4 py-3 text-[var(--color-text-primary)] font-bold border border-[var(--color-border)] rounded-xl hover:bg-[var(--color-bg-secondary)] transition-colors"
-                >
-                  Log in
-                </Link>
-                <Link 
-                  to="/register" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center px-4 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-xl shadow-md transition-colors"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
-  );
+ <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-[var(--color-border)]">
+ <Link 
+ to="/login" 
+ onClick={() => setIsMobileMenuOpen(false)}
+ className="w-full text-center px-4 py-3 text-[var(--color-text-primary)] font-bold border border-[var(--color-border)] rounded-xl hover:bg-[var(--color-bg-secondary)] transition-colors"
+ >
+ Log in
+ </Link>
+ <Link 
+ to="/register" 
+ onClick={() => setIsMobileMenuOpen(false)}
+ className="w-full text-center px-4 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-xl shadow-md transition-colors"
+ >
+ Sign up
+ </Link>
+ </div>
+ )}
+ </div>
+ </div>
+ )}
+ </nav>
+ );
 };
 
 export default Navbar;
