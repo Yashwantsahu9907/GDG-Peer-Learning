@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, Edit3, MessageSquare } from 'lucide-react';
+import { Code, Flame, Coins, Search, Menu, User, Bell, Sun, Moon, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, MessageSquare } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ChatWidget from './chat/ChatWidget';
@@ -156,15 +156,16 @@ const Navbar = () => {
                         <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
                           <User className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> My Profile
                         </Link>
-                        <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
-                          <Edit3 className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> Edit Profile
-                        </Link>
+
                       </div>
 
                       <div className="py-2 border-t border-[var(--color-border)]">
                         <p className="px-4 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-1 mt-1">Workspace</p>
                         <Link to="/discover" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
                           <Compass className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> Discover
+                        </Link>
+                        <Link to="/points" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
+                          <Coins className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> Points
                         </Link>
                         <Link to="/bounties" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] transition-colors group">
                           <Code className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" /> Bounties

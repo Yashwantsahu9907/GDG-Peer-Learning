@@ -32,6 +32,7 @@ const Signup = () => {
       setStoredUser({ userId: data.userId, name: data.name });
       navigate('/');
     } catch (fetchError) {
+      console.error('Signup error:', fetchError);
       setError('Server error while creating account.');
       setLoading(false);
     }
