@@ -1,28 +1,30 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import Landing from './pages/Landing';
-import Discover from './pages/Discover';
-import Bounties from './pages/Bounties';
-import Leaderboard from './pages/Leaderboard';
-import Meeting from './pages/Meeting';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import Points from './pages/Points';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import { Toaster } from 'react-hot-toast';
-import Session from './pages/Session';
-import Chat from './pages/Chat';
+import React from'react';
+import { BrowserRouter, Routes, Route } from'react-router-dom';
+import Layout from'./components/Layout';
+import Landing from'./pages/Landing';
+import Discover from'./pages/Discover';
+import Bounties from'./pages/Bounties';
+import Leaderboard from'./pages/Leaderboard';
+import Meeting from'./pages/Meeting';
+import Login from'./pages/Login';
+import Register from'./pages/Register';
+import Profile from'./pages/Profile';
+import Points from'./pages/Points';
+import { AuthProvider } from'./contexts/AuthContext';
+import ProtectedRoute from'./components/ProtectedRoute';
+import { Toaster } from'react-hot-toast';
+import Session from'./pages/Session';
+import Chat from'./pages/Chat';
+
+import { NotificationProvider } from './contexts/NotificationContext';
 
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
-        <BrowserRouter>
+        <NotificationProvider>
+          <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' } }} />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Landing />} />
@@ -42,6 +44,7 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </NotificationProvider>
       </ThemeProvider>
     </AuthProvider>
   );

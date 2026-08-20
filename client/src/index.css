@@ -18,21 +18,7 @@
     --color-accent-light: #e6f4ea;
   }
 
-  .dark {
-    /* GeeksforGeeks Dark Theme */
-    --color-bg-primary: #121415;
-    --color-bg-secondary: #1a1c1d;
-    --color-bg-tertiary: #242729;
-    --color-border: #30363d;
-    
-    --color-text-primary: #e6edf3;
-    --color-text-secondary: #8b949e;
-    --color-text-muted: #6e7681;
-    
-    --color-accent: #3fb950;
-    --color-accent-hover: #2ea043;
-    --color-accent-light: rgba(63, 185, 80, 0.15);
-  }
+
 
   body {
     background-color: var(--color-bg-primary);
@@ -123,9 +109,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
-  .dark .gfg-panel {
-    box-shadow: none;
-  }
+
   .card-hover {
     @apply transition-transform duration-200 hover:-translate-y-1;
   }
