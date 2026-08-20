@@ -263,14 +263,14 @@ const ChatWidget = ({ user, onClose }) => {
                     {msg.senderId !== currentUserId && (
                       <button
                         onClick={() => handleContactClick({ userId: msg.senderId, name: msg.senderName })}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[var(--color-accent)] hover:underline text-[10px] flex items-center gap-1"
                         title="Reply Privately"
                       >
                         <MessageSquare className="w-3 h-3" /> Reply
                       </button>
                     )}
                     {msg.senderId === currentUserId && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2">
                         <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500 text-[10px] flex items-center gap-1" title="Edit">
                           <Pencil className="w-3 h-3" /> Edit
                         </button>
@@ -342,7 +342,7 @@ const ChatWidget = ({ user, onClose }) => {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[9px] text-[var(--color-text-muted)] mx-1">{formatTime(msg.timestamp)}{msg.isEdited && ' (edited)'}</span>
                       {isSelf && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                        <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2">
                           <button onClick={() => { setEditingMessage(msg); setInputMessage(msg.text); }} className="text-blue-400 hover:text-blue-500" title="Edit">
                             <Pencil className="w-3 h-3" />
                           </button>
