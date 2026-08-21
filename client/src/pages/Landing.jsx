@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from'react';
-import { Link, useNavigate } from'react-router-dom';
-import { Users, Code, Zap, Globe, ArrowRight, BookOpen, UserPlus, Target, Award, Plus, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy, Sparkles } from'lucide-react';
-import { getStoredUser } from'../utils/userClient';
-import ParticleRing from'../components/ParticleRing';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Users, Code, Zap, Globe, ArrowRight, BookOpen, UserPlus, Target, Award, Plus, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, Trophy, Sparkles } from 'lucide-react';
+import { getStoredUser } from '../utils/userClient';
+import { API_URL } from '../config';
+import ParticleRing from '../components/ParticleRing';
 
 const HeroSection = ({ activePeers, handleFindMentorClick }) => (
  <section id="hero" className="relative isolate flex min-h-[calc(100vh-5rem)] w-full items-center justify-center overflow-hidden bg-white px-4 py-24 text-center">
@@ -348,7 +349,7 @@ const Landing = () => {
  
  const fetchStats = async () => {
  try {
- const res = await fetch('http://localhost:5000/api/stats');
+ const res = await fetch(`${API_URL}/stats`);
  const data = await res.json();
  if (data && data.activePeers) {
  setActivePeers(data.activePeers);

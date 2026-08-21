@@ -1,6 +1,7 @@
 import React, { useState } from'react';
 import { Link, useNavigate } from'react-router-dom';
 import { setStoredUser } from'../utils/userClient';
+import { API_URL } from '../config';
 
 const Signup = () => {
  const navigate = useNavigate();
@@ -14,7 +15,7 @@ const Signup = () => {
  setLoading(true);
 
  try {
- const response = await fetch('http://localhost:5000/api/users', {
+ const response = await fetch(`${API_URL}/users`, {
  method:'POST',
  headers: {'Content-Type':'application/json'
  },

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from'react';
 import { socketService } from'../../utils/socket';
 import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2, CornerDownRight } from'lucide-react';
+import { SERVER_URL } from '../../config';
 
 const ChatWidget = ({ user, onClose }) => {
  const currentUserId = user?._id || user?.userId ||'guest';
  const currentUserName = user?.name ||'Guest User';
- const serverUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace(/\/api$/,'') ||'http://localhost:5000';
+ const serverUrl = SERVER_URL;
  const [activeTab, setActiveTab] = useState('global'); //'global','contacts','personal'
  const [globalMessages, setGlobalMessages] = useState([]);
  const [contacts, setContacts] = useState([]);

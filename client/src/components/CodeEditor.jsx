@@ -1,6 +1,7 @@
-import React, { useState } from'react';
-import Editor from'@monaco-editor/react';
-import { Play, Trash2, Loader2, Terminal, Code2, Sparkles } from'lucide-react';
+import React, { useState } from 'react';
+import Editor from '@monaco-editor/react';
+import { Play, Trash2, Loader2, Terminal, Code2, Sparkles } from 'lucide-react';
+import { API_URL } from '../config';
 
 const BOILERPLATES = {
  javascript:'// JavaScript Workspace\nfunction solve(input) {\n console.log("Processing input:", input);\n return input * 2;\n}\n\nconsole.log("Result:", solve(42));\n',
@@ -45,8 +46,7 @@ export default function CodeEditor() {
  setIsError(false);
 
  try {
- const apiUrl = import.meta.env.VITE_SERVER_URL ||'http://localhost:5000';
- const response = await fetch(`${apiUrl}/api/execute`, {
+ const response = await fetch(`${API_URL}/execute`, {
  method:'POST',
  headers: {'Content-Type':'application/json',
  },

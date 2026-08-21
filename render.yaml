@@ -1,0 +1,43 @@
+services:
+  # --------------------------------------------------
+  # Backend Web Service (Node.js / Express + Socket.io)
+  # --------------------------------------------------
+  - type: web
+    name: gdg-peer-learning-backend
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+
+  # --------------------------------------------------
+  # Frontend Static Site (React + Vite)
+  # --------------------------------------------------
+  - type: static
+    name: gdg-peer-learning-frontend
+    plan: free
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_SERVER_URL
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false

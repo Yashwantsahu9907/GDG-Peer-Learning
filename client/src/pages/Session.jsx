@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from'react';
-import { useParams, useNavigate } from'react-router-dom';
-import Editor from'@monaco-editor/react';
-import { socketService } from'../utils/socket';
-import { getStoredUser } from'../utils/userClient';
-import Whiteboard from'../components/Whiteboard';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Editor from '@monaco-editor/react';
+import { socketService } from '../utils/socket';
+import { getStoredUser } from '../utils/userClient';
+import Whiteboard from '../components/Whiteboard';
+import { API_URL } from '../config';
 import { 
  Mic, MicOff, Video, VideoOff, PhoneOff, Settings, Users, 
  MessageSquare, Monitor, FileText, Code2, PenTool, Send, 
@@ -259,8 +260,7 @@ const Session = () => {
  setIsConsoleError(false);
 
  try {
- const apiUrl = import.meta.env.VITE_SERVER_URL ||'http://localhost:5000';
- const response = await fetch(`${apiUrl}/api/execute`, {
+ const response = await fetch(`${API_URL}/execute`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify({ language, code })

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { API_URL } from '../config';
 
 const AuthContext = createContext();
 
@@ -13,7 +14,7 @@ export const AuthProvider = ({ children }) => {
  // Check if user is logged in
  const checkAuth = async () => {
  try {
- const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
+ const res = await fetch(`${API_URL}/auth/me`, {
  credentials:'include'
  });
  const data = await res.json();
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
 
  const logout = async () => {
  try {
- await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, { 
+ await fetch(`${API_URL}/auth/logout`, { 
  method:'POST',
  credentials:'include'
  });

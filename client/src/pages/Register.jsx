@@ -3,6 +3,7 @@ import { Link, useNavigate } from'react-router-dom';
 import { useAuth } from'../contexts/AuthContext';
 import { Mail, Lock, User, Phone, Book, GraduationCap, ArrowRight } from'lucide-react';
 import { useGoogleLogin } from'@react-oauth/google';
+import { API_URL } from '../config';
 
 const Register = () => {
  const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Register = () => {
 
  setLoading(true);
  try {
- const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
+ const response = await fetch(`${API_URL}/auth/register`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify(formData),
@@ -60,7 +61,7 @@ const Register = () => {
  setLoading(true);
  setError('');
  
- const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+ const response = await fetch(`${API_URL}/auth/google`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify({
