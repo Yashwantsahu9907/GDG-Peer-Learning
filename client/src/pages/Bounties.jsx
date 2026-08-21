@@ -2,6 +2,7 @@ import React, { useState, useEffect } from'react';
 import { Coins, CheckCircle, Clock, Plus, Tag, X } from'lucide-react';
 import { useAuth } from'../contexts/AuthContext';
 import toast from'react-hot-toast';
+import { API_URL } from '../config';
 
 const Bounties = () => {
  const [filter, setFilter] = useState('All');
@@ -19,7 +20,7 @@ const Bounties = () => {
 
  const fetchBounties = async () => {
  try {
- const res = await fetch(`${import.meta.env.VITE_API_URL}/bounties`);
+ const res = await fetch(`${API_URL}/bounties`);
  const data = await res.json();
  if (data.success) {
  setBounties(data.bounties);
@@ -43,7 +44,7 @@ const Bounties = () => {
  }
  try {
  const tagsArray = formData.tags.split(',').map(t => t.trim());
- const res = await fetch(`${import.meta.env.VITE_API_URL}/bounties`, {
+ const res = await fetch(`${API_URL}/bounties`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify({
@@ -75,7 +76,7 @@ const Bounties = () => {
  // Simplification for UI demonstration: we pass our own ID as the solver
  // In a real flow, the author would pick the solver.
  try {
- const res = await fetch(`${import.meta.env.VITE_API_URL}/bounties/${bountyId}/resolve`, {
+ const res = await fetch(`${API_URL}/bounties/${bountyId}/resolve`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify({ solverId: user._id }),

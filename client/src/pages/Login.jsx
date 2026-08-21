@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from'react';
-import { Link, useNavigate, useLocation } from'react-router-dom';
-import toast from'react-hot-toast';
-import { useAuth } from'../contexts/AuthContext';
-import { Mail, Lock, ArrowRight } from'lucide-react';
-import { useGoogleLogin } from'@react-oauth/google';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { API_URL } from '../config';
 
 const Login = () => {
  const navigate = useNavigate();
@@ -27,7 +28,7 @@ const Login = () => {
  setLoading(true);
 
  try {
- const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+ const response = await fetch(`${API_URL}/auth/login`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify(formData),
@@ -56,7 +57,7 @@ const Login = () => {
  setLoading(true);
  setError('');
  
- const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+ const response = await fetch(`${API_URL}/auth/google`, {
  method:'POST',
  headers: {'Content-Type':'application/json' },
  body: JSON.stringify({

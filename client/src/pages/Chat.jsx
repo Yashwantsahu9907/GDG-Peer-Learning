@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from'react';
-import { socketService } from'../utils/socket';
-import { useAuth } from'../contexts/AuthContext';
-import { Globe, MessageSquare, Send, Users, User as UserIcon, Sparkles } from'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { socketService } from '../utils/socket';
+import { useAuth } from '../contexts/AuthContext';
+import { Globe, MessageSquare, Send, Users, User as UserIcon, Sparkles } from 'lucide-react';
+import { SERVER_URL } from '../config';
 
 const Chat = () => {
  const { user } = useAuth();
@@ -20,7 +21,7 @@ const Chat = () => {
  const messagesEndRef = useRef(null);
  const currentUserId = user?._id || user?.userId || user?.id ||'guest';
  const currentUserName = user?.name ||'Developer';
- const serverUrl = import.meta.env.VITE_SERVER_URL ||'http://localhost:5000';
+ const serverUrl = SERVER_URL;
 
  useEffect(() => {
  const token = localStorage.getItem('token') ||'demo-token';

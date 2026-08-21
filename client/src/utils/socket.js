@@ -1,6 +1,5 @@
-import { io } from'socket.io-client';
-
-const SOCKET_URL = import.meta.env.VITE_SERVER_URL ||'http://localhost:5000';
+import { io } from 'socket.io-client';
+import { SERVER_URL } from '../config';
 
 class SocketService {
  constructor() {
@@ -10,12 +9,13 @@ class SocketService {
   connect(token, userId) {
     if (this.socket) return;
  
- this.socket = io(SOCKET_URL, {
+ this.socket = io(SERVER_URL, {
  auth: {
  auth_token: token,
  userId: userId
  },
- transports: ['websocket'],
+ transports: ['polling', 'websocket'],
+ withCredentials: true
  });
 
  this.socket.on('connect', () => {
