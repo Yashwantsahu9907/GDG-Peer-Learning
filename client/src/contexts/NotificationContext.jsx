@@ -87,7 +87,8 @@ export const NotificationProvider = ({ children }) => {
       fetchUnreadCount();
       
       // Ensure socket is connected globally for notifications
-      socketService.connect(null, user._id);
+      const token = localStorage.getItem('token');
+      socketService.connect(token, user._id);
       
       socketService.on('notification:new', (notification) => {
         setNotifications(prev => [notification, ...prev]);
@@ -102,6 +103,15 @@ export const NotificationProvider = ({ children }) => {
       socketService.off('notification:new');
     };
   }, [user, fetchNotifications, fetchUnreadCount]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchNotifications();
+      fetchUnreadCount();
+    };
+    window.addEventListener('notifications:refresh', handleRefresh);
+    return () => window.removeEventListener('notifications:refresh', handleRefresh);
+  }, [fetchNotifications, fetchUnreadCount]);
 
   return (
     <NotificationContext.Provider value={{

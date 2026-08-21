@@ -44,35 +44,45 @@ const ChatWidget = ({ user, onClose }) => {
  };
 
  const handleReceivePersonal = (msg) => {
- // If we're currently chatting with the person this message is from/to
- setPersonalMessages((prev) => {
- return [...prev, msg];
- });
- 
- setContacts((prev) => {
- const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
- const exists = prev.find(c => c.userId === otherId);
- const isMine = msg.senderId === currentUserId;
- 
- if (exists) {
- return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
- } else {
- // Try to get name from current selected contact if we are the sender
- let newName = isMine ?'User' : msg.senderName;
- if (isMine && selectedContactRef.current?.userId === otherId) {
- newName = selectedContactRef.current.name;
- }
- 
- return [{
- userId: otherId,
- name: newName,
- lastMessage: msg.text,
- lastMessageIsMine: isMine,
- timestamp: msg.timestamp
- }, ...prev];
- }
- });
- };
+    // If we're currently chatting with the person this message is from/to
+    setPersonalMessages((prev) => {
+      return [...prev, msg];
+    });
+    
+    setContacts((prev) => {
+      const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+      const exists = prev.find(c => c.userId === otherId);
+      const isMine = msg.senderId === currentUserId;
+      
+      const isSelected = selectedContactRef.current?.userId === otherId;
+      const incrementUnread = !isMine && (!isSelected || activeTab !== 'personal');
+      
+      if (exists) {
+        return prev.map(c => c.userId === otherId ? { 
+          ...c, 
+          lastMessage: msg.text, 
+          lastMessageIsMine: isMine, 
+          timestamp: msg.timestamp,
+          unreadCount: incrementUnread ? (c.unreadCount || 0) + 1 : (c.unreadCount || 0)
+        } : c);
+      } else {
+        // Try to get name from current selected contact if we are the sender
+        let newName = isMine ? 'User' : msg.senderName;
+        if (isMine && selectedContactRef.current?.userId === otherId) {
+          newName = selectedContactRef.current.name;
+        }
+        
+        return [{
+          userId: otherId,
+          name: newName,
+          lastMessage: msg.text,
+          lastMessageIsMine: isMine,
+          timestamp: msg.timestamp,
+          unreadCount: incrementUnread ? 1 : 0
+        }, ...prev];
+      }
+    });
+  };
 
  const handleMessageEdited = (editedMsg) => {
  if (editedMsg.chatType ==='global') {
@@ -324,7 +334,22 @@ const ChatWidget = ({ user, onClose }) => {
  contacts.map((contact, idx) => (
  <div 
  key={idx} 
- onClick={() => handleContactClick(contact)}
+ onClick={() => {
+ handleContactClick(contact);
+ if (contact.unreadCount > 0) {
+ setContacts(prev => prev.map(c => c.userId === contact.userId ? { ...c, unreadCount: 0 } : c));
+ fetch(`${serverUrl}/api/notifications/sender/${contact.userId}/read`, {
+ method: 'PATCH',
+ headers: {
+ 'Content-Type': 'application/json',
+ 'Authorization': `Bearer ${localStorage.getItem('token')}`
+ },
+ credentials: 'include'
+ }).then(() => {
+ window.dispatchEvent(new CustomEvent('notifications:refresh'));
+ }).catch(err => console.error(err));
+ }
+ }}
  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--color-bg-secondary)] cursor-pointer transition-colors border border-transparent hover:border-[var(--color-border)]"
  >
  <div className="w-9 h-9 rounded-full bg-[var(--color-accent-light)] border border-[var(--color-accent)]/20 flex items-center justify-center text-[var(--color-accent)] font-bold text-sm shrink-0">
@@ -335,10 +360,17 @@ const ChatWidget = ({ user, onClose }) => {
  <span className="font-bold text-xs text-[var(--color-text-primary)] truncate">{contact.name}</span>
  <span className="text-[9px] text-[var(--color-text-muted)] shrink-0">{formatTime(contact.timestamp)}</span>
  </div>
- <p className="text-xs text-[var(--color-text-secondary)] truncate">
+ <div className="flex justify-between items-center">
+ <p className="text-xs text-[var(--color-text-secondary)] truncate flex-1 pr-2">
  {contact.lastMessageIsMine && <span className="font-semibold text-[var(--color-text-primary)] opacity-75">You: </span>}
  {contact.lastMessage}
  </p>
+ {contact.unreadCount > 0 && (
+ <div className="w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0 shadow-sm">
+ {contact.unreadCount}
+ </div>
+ )}
+ </div>
  </div>
  </div>
  ))
