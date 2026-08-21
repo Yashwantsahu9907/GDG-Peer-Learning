@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Code, Flame, Coins, Search, Menu, User, Bell, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ChatWidget from './chat/ChatWidget';
-import Notifications from './Notifications';
 
 const Navbar = () => {
   const location = useLocation();
@@ -106,7 +105,10 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <Notifications />
+                <button className="p-2 text-zinc-600 hover:text-black hover:bg-zinc-100 rounded-full transition-colors relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-black border-2 border-white"></span>
+                </button>
                 
                 <div className="relative">
                   <button 

@@ -12,11 +12,6 @@ const Chat = () => {
  const [personalMessages, setPersonalMessages] = useState([]);
  const [selectedContact, setSelectedContact] = useState(null);
  const [inputMessage, setInputMessage] = useState('');
- const selectedContactRef = useRef(null);
-
- useEffect(() => {
-   selectedContactRef.current = selectedContact;
- }, [selectedContact]);
 
  const messagesEndRef = useRef(null);
  const currentUserId = user?._id || user?.userId || user?.id ||'guest';
@@ -41,37 +36,26 @@ const Chat = () => {
  setGlobalMessages((prev) => [...prev, msg]);
  };
 
-  const handleReceivePersonal = (msg) => {
-    setPersonalMessages((prev) => [...prev, msg]);
-    setContacts((prev) => {
-      const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
-      const exists = prev.find(c => c.userId === otherId);
-      const isMine = msg.senderId === currentUserId;
-      
-      // Determine if we should increment unreadCount
-      const isSelected = selectedContactRef.current?.userId === otherId;
-      const incrementUnread = !isMine && !isSelected;
-      
-      if (exists) {
-        return prev.map(c => c.userId === otherId ? { 
-          ...c, 
-          lastMessage: msg.text, 
-          lastMessageIsMine: isMine, 
-          timestamp: msg.timestamp,
-          unreadCount: incrementUnread ? (c.unreadCount || 0) + 1 : (c.unreadCount || 0)
-        } : c);
-      } else {
-        return [{
-          userId: otherId,
-          name: isMine ? 'User' : msg.senderName,
-          lastMessage: msg.text,
-          lastMessageIsMine: isMine,
-          timestamp: msg.timestamp,
-          unreadCount: incrementUnread ? 1 : 0
-        }, ...prev];
-      }
-    });
-  };
+ const handleReceivePersonal = (msg) => {
+ setPersonalMessages((prev) => [...prev, msg]);
+ setContacts((prev) => {
+ const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+ const exists = prev.find(c => c.userId === otherId);
+ const isMine = msg.senderId === currentUserId;
+ 
+ if (exists) {
+ return prev.map(c => c.userId === otherId ? { ...c, lastMessage: msg.text, lastMessageIsMine: isMine, timestamp: msg.timestamp } : c);
+ } else {
+ return [{
+ userId: otherId,
+ name: isMine ? 'User' : msg.senderName,
+ lastMessage: msg.text,
+ lastMessageIsMine: isMine,
+ timestamp: msg.timestamp
+ }, ...prev];
+ }
+ });
+ };
 
  socketService.on('receive_global_message', handleReceiveGlobal);
  socketService.on('receive_personal_message', handleReceivePersonal);
@@ -190,45 +174,16 @@ const Chat = () => {
  contacts.map((contact, idx) => (
  <button
  key={idx}
- onClick={() => { 
-   setSelectedContact(contact); 
-   setActiveTab('personal');
-   if (contact.unreadCount > 0) {
-     setContacts(prev => prev.map(c => c.userId === contact.userId ? { ...c, unreadCount: 0 } : c));
-     fetch(`${serverUrl}/api/notifications/sender/${contact.userId}/read`, {
-       method: 'PATCH',
-       headers: {
-         'Content-Type': 'application/json',
-         'Authorization': `Bearer ${localStorage.getItem('token')}`
-       },
-       credentials: 'include'
-     }).then(() => {
-       window.dispatchEvent(new CustomEvent('notifications:refresh'));
-     }).catch(err => console.error(err));
-   }
- }}
+ onClick={() => { setSelectedContact(contact); setActiveTab('personal'); }}
  className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors ${selectedContact?.userId === contact.userId && activeTab ==='personal' ?'bg-[var(--color-accent-light)] border border-[var(--color-accent)]/30 text-[var(--color-accent)]' :'hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]'}`}
  >
  <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] text-white font-bold flex items-center justify-center text-xs shrink-0">
  {contact.name ? contact.name[0].toUpperCase() : <UserIcon className="w-4 h-4" />}
  </div>
- <div className="flex-1 overflow-hidden">
-                          <div className="flex justify-between items-center mb-0.5">
-                            <span className="font-bold text-xs text-[var(--color-text-primary)] truncate">{contact.name}</span>
-                            <span className="text-[9px] text-[var(--color-text-muted)] shrink-0">{formatTime(contact.timestamp)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-[11px] text-[var(--color-text-muted)] truncate flex-1 pr-2">
-                              {contact.lastMessageIsMine && <span className="font-semibold text-[var(--color-text-primary)] opacity-75">You: </span>}
-                              {contact.lastMessage}
-                            </p>
-                            {contact.unreadCount > 0 && (
-                              <div className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm">
-                                {contact.unreadCount}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+ <div className="flex-1 truncate">
+ <div className="font-bold text-xs text-[var(--color-text-primary)] truncate">{contact.name}</div>
+ <div className="text-[11px] text-[var(--color-text-muted)] truncate">{contact.lastMessage}</div>
+ </div>
  </button>
  ))
  )}

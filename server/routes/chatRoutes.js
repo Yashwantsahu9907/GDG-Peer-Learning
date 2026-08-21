@@ -1,7 +1,6 @@
 import express from 'express';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
-import Notification from '../models/Notification.js';
 
 const router = express.Router();
 
@@ -81,22 +80,6 @@ router.get('/contacts/:userId', async (req, res) => {
         }
       });
     }
-    
-    // Attach unread counts from Notifications
-    const unreadNotifications = await Notification.find({
-      recipientId: userId,
-      type: 'MESSAGE',
-      isRead: false
-    });
-    
-    const unreadMap = {};
-    unreadNotifications.forEach(n => {
-      unreadMap[n.senderId] = (unreadMap[n.senderId] || 0) + 1;
-    });
-    
-    contactsArray.forEach(c => {
-      c.unreadCount = unreadMap[c.userId] || 0;
-    });
     
     res.status(200).json({ success: true, contacts: contactsArray });
   } catch (error) {
