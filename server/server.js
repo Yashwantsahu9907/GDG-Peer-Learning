@@ -577,28 +577,46 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static frontend assets and handle SPA client-side routing fallback
-const clientDistPath = path.resolve(__dirname, '../client/dist');
-const clientDistPathAlt = path.resolve(__dirname, './client/dist');
+const getDistPath = () => {
+  const clientDistPath = path.resolve(__dirname, '../client/dist');
+  const clientDistPathAlt = path.resolve(__dirname, './client/dist');
+  if (fs.existsSync(clientDistPath)) return clientDistPath;
+  if (fs.existsSync(clientDistPathAlt)) return clientDistPathAlt;
+  return null;
+};
 
-const distPath = fs.existsSync(clientDistPath)
-  ? clientDistPath
-  : fs.existsSync(clientDistPathAlt)
-  ? clientDistPathAlt
-  : null;
+// Serve static files dynamically if dist folder exists
+app.use((req, res, next) => {
+  const dist = getDistPath();
+  if (dist && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
+    return express.static(dist)(req, res, next);
+  }
+  next();
+});
 
-if (distPath) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
+// Wildcard SPA Fallback Route for non-API requests
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    return next();
+  }
+  const dist = getDistPath();
+  if (dist && fs.existsSync(path.join(dist, 'index.html'))) {
+    return res.sendFile(path.join(dist, 'index.html'));
+  }
+  res.status(404).send('Not Found');
+});
 
 const PORT = process.env.PORT || 5000;
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please stop any process running on port ${PORT} and restart.`);
+  } else {
+    console.error('Server error:', err);
+  }
+});
 
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
+
