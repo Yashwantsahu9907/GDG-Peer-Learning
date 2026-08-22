@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useRef } from'react';
-import { socketService } from'../../utils/socket';
-import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2, CornerDownRight } from'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { socketService } from '../../utils/socket';
+import { X, Send, Globe, User as UserIcon, MessageSquare, ArrowLeft, Users, Sparkles, MessageCircle, Pencil, Trash2, CornerDownRight } from 'lucide-react';
 import { SERVER_URL } from '../../config';
+import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
+import MentionDropdown from './MentionDropdown';
+import MentionText from './MentionText';
 
 const ChatWidget = ({ user, onClose }) => {
- const currentUserId = user?._id || user?.userId ||'guest';
- const currentUserName = user?.name ||'Guest User';
+ const currentUserId = user?._id || user?.userId || 'guest';
+ const currentUserName = user?.name || 'Guest User';
  const serverUrl = SERVER_URL;
- const [activeTab, setActiveTab] = useState('global'); //'global','contacts','personal'
+ const [activeTab, setActiveTab] = useState('global'); // 'global', 'contacts', 'personal'
  const [globalMessages, setGlobalMessages] = useState([]);
  const [contacts, setContacts] = useState([]);
  const [personalMessages, setPersonalMessages] = useState([]);
@@ -16,6 +19,7 @@ const ChatWidget = ({ user, onClose }) => {
  const [editingMessage, setEditingMessage] = useState(null);
  const [replyingTo, setReplyingTo] = useState(null);
  const [activeMessageId, setActiveMessageId] = useState(null);
+ const [allUsers, setAllUsers] = useState([]);
  
  const messagesEndRef = useRef(null);
  const selectedContactRef = useRef(null);
@@ -106,6 +110,16 @@ const ChatWidget = ({ user, onClose }) => {
 
  // 2. Fetch Initial Chat History
  useEffect(() => {
+ // Fetch all users for mentions
+ fetch(`${serverUrl}/api/users`)
+ .then(res => res.json())
+ .then(data => {
+ if (data.success) {
+ setAllUsers(data.users);
+ }
+ })
+ .catch(err => console.error('Users fetch error:', err));
+
  // Fetch Global Chat History
  fetch(`${serverUrl}/api/chat/global?_t=${Date.now()}`)
  .then(res => res.json())
@@ -148,6 +162,19 @@ const ChatWidget = ({ user, onClose }) => {
  messagesEndRef.current?.scrollIntoView({ behavior:'smooth' });
  }, [globalMessages, personalMessages, activeTab]);
 
+  const handleSelectMention = (newText) => {
+    setInputMessage(newText);
+  };
+
+  const {
+    isMentionActive,
+    filteredMembers,
+    selectedIndex,
+    setSelectedIndex,
+    handleKeyDown: handleMentionKeyDown,
+    insertMention
+  } = useMentionAutocomplete(inputMessage, allUsers, handleSelectMention);
+
  const handleSendMessage = (e) => {
  e.preventDefault();
  if (!inputMessage.trim()) return;
@@ -163,11 +190,21 @@ const ChatWidget = ({ user, onClose }) => {
  return;
  }
 
+ let messageMentions = [];
+ if (activeTab === 'global') {
+   allUsers.forEach(u => {
+     if (inputMessage.includes(`@${u.name}`)) {
+       messageMentions.push({ userId: u._id, name: u.name });
+     }
+   });
+ }
+
  if (activeTab ==='global') {
  socketService.emit('send_global_message', {
  senderId: currentUserId,
  senderName: currentUserName,
  text: inputMessage.trim(),
+ mentions: messageMentions,
  replyTo: replyingTo ? { messageId: replyingTo._id, senderName: replyingTo.senderName, text: replyingTo.text } : null
  });
  setReplyingTo(null);
@@ -302,7 +339,7 @@ const ChatWidget = ({ user, onClose }) => {
                         <div className="truncate">{msg.replyTo.text}</div>
                       </div>
                     )}
-                    <span>{msg.text}</span>
+                    <MentionText text={msg.text} mentions={msg.mentions} />
                   </div>
                 </div>
               ))
@@ -393,7 +430,7 @@ const ChatWidget = ({ user, onClose }) => {
                           <div className="truncate">{msg.replyTo.text}</div>
                         </div>
                       )}
-                      <span>{msg.text}</span>
+                      <MentionText text={msg.text} mentions={msg.mentions} />
                     </div>
                   </div>
                 );
@@ -418,13 +455,22 @@ const ChatWidget = ({ user, onClose }) => {
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
+            {activeTab === 'global' && isMentionActive && (
+              <MentionDropdown 
+                members={filteredMembers}
+                selectedIndex={selectedIndex}
+                onSelect={insertMention}
+              />
+            )}
             <input 
               type="text" 
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={editingMessage ? "Edit message..." : (activeTab === 'global' ? "Chat with community..." : `Message ${selectedContact?.name || 'peer'}...`)}
+              onKeyDown={handleMentionKeyDown}
+              placeholder={editingMessage ? "Edit message..." : (activeTab === 'global' ? "Chat with community... (Type @ to mention)" : `Message ${selectedContact?.name || 'peer'}...`)}
               className="flex-1 bg-white border border-zinc-300 rounded-full px-3.5 py-2 text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-black transition-colors"
+              autoComplete="off"
             />
             <button 
               type="submit" 
