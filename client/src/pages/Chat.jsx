@@ -174,15 +174,44 @@ const Chat = () => {
               contacts.map((contact, idx) => (
                 <button
                   key={idx}
-                  onClick={() => { setSelectedContact(contact); setActiveTab('personal'); }}
+                  onClick={() => { 
+                    setSelectedContact(contact); 
+                    setActiveTab('personal');
+                    if (contact.unreadCount > 0) {
+                      setContacts(prev => prev.map(c => c.userId === contact.userId ? { ...c, unreadCount: 0 } : c));
+                      fetch(`${serverUrl}/api/notifications/sender/${contact.userId}/read`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        credentials: 'include'
+                      }).then(() => {
+                        window.dispatchEvent(new CustomEvent('notifications:refresh'));
+                      }).catch(err => console.error(err));
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors ${selectedContact?.userId === contact.userId && activeTab === 'personal' ? 'bg-zinc-200/80 border border-zinc-300 text-black font-bold' : 'hover:bg-white text-zinc-600'}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-black text-white font-bold flex items-center justify-center text-xs shrink-0">
                     {contact.name ? contact.name[0].toUpperCase() : <UserIcon className="w-4 h-4" />}
                   </div>
-                  <div className="flex-1 truncate">
-                    <div className="font-bold text-xs text-zinc-900 truncate">{contact.name}</div>
-                    <div className="text-[11px] text-zinc-500 truncate">{contact.lastMessage}</div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="font-bold text-xs text-zinc-900 truncate">{contact.name}</span>
+                      <span className="text-[9px] text-zinc-400 shrink-0">{formatTime(contact.timestamp)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[11px] text-zinc-500 truncate flex-1 pr-2">
+                        {contact.lastMessageIsMine && <span className="font-semibold text-zinc-900 opacity-75">You: </span>}
+                        {contact.lastMessage}
+                      </p>
+                      {contact.unreadCount > 0 && (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm">
+                          {contact.unreadCount}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))
@@ -238,7 +267,7 @@ const Chat = () => {
                 <div className="flex flex-col items-center justify-center h-full text-center py-20 text-zinc-400">
                   <Sparkles className="h-12 w-12 text-zinc-300 mb-2" />
                   <p className="font-semibold text-sm text-zinc-700">Say hello to {selectedContact?.name}</p>
-                  <p className="text-xs mt-1">Direct messages between you and this peer are synced in real time.</p>
+                  <p className="text-xs mt-1">Start your 1-on-1 conversation now.</p>
                 </div>
               ) : (
                 currentPersonalMsgs.map((msg, idx) => {

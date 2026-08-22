@@ -185,7 +185,7 @@ const Meeting = () => {
  </header>
 
  {/* 2. Interactive Resizable Split Grid */}
- <div className="flex-grow p-3 bg-gray-100 overflow-hidden relative">
+ <div className="grow p-3 bg-gray-100 overflow-hidden relative">
  <div ref={containerRef} className="h-full w-full flex relative select-none">
  
  {/* LEFT PANE: Code Editor */}

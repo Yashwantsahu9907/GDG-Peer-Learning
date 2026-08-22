@@ -468,7 +468,7 @@ const Session = () => {
  </header>
 
  {/* Main Split Layout */}
- <div className="flex-grow flex w-full overflow-hidden">
+ <div className="grow flex w-full overflow-hidden">
  
  {/* LEFT WORKSPACE (68%) */}
  <div className="w-[68%] border-r border-gray-200 flex flex-col bg-white overflow-hidden">
@@ -529,10 +529,10 @@ const Session = () => {
  </div>
 
  {/* Editor / Whiteboard Content */}
- <div className="flex-grow flex flex-col relative overflow-hidden bg-white">
+ <div className="grow flex flex-col relative overflow-hidden bg-white">
  {activeMainTab ==='editor' ? (
- <div className="flex-grow flex flex-col relative overflow-hidden">
- <div className="flex-grow relative">
+ <div className="grow flex flex-col relative overflow-hidden">
+ <div className="grow relative">
  <Editor
  height="100%"
  language={language}
@@ -569,7 +569,7 @@ const Session = () => {
  </button>
  </div>
  </div>
- <div className="flex-grow p-3 overflow-y-auto font-mono text-xs">
+ <div className="grow p-3 overflow-y-auto font-mono text-xs">
  {executionOutput ? (
  <pre className={`whitespace-pre-wrap break-words ${isConsoleError ?'text-red-400' :'text-emerald-400'}`}>
  {executionOutput}
@@ -593,11 +593,11 @@ const Session = () => {
  <div className="w-[32%] flex flex-col bg-gray-100 border-l border-gray-200">
  
  {/* Top Panel Content (Chat, Video, Notes) */}
- <div className="flex-grow flex flex-col overflow-hidden">
+ <div className="grow flex flex-col overflow-hidden">
  
  {/* 1. CHAT PANEL */}
  {activePanelTab ==='chat' && (
- <div className="flex-grow flex flex-col overflow-hidden">
+ <div className="grow flex flex-col overflow-hidden">
  <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
  <div className="flex items-center gap-2">
  <MessageSquare className="h-4 w-4 text-emerald-400" />
@@ -606,7 +606,7 @@ const Session = () => {
  <span className="text-[11px] text-gray-600">{messages.length} messages</span>
  </div>
 
- <div className="flex-grow p-4 overflow-y-auto space-y-3.5 custom-scrollbar">
+ <div className="grow p-4 overflow-y-auto space-y-3.5 custom-scrollbar">
  {messages.map((msg) => {
  const isCurrentUser = msg.senderId === user?.userId || msg.sender ==='You';
  return (
@@ -667,7 +667,7 @@ const Session = () => {
 
  {/* 2. VIDEO STREAM PANEL */}
  {activePanelTab ==='video' && (
- <div className="flex-grow flex flex-col p-4 gap-4 overflow-y-auto custom-scrollbar">
+ <div className="grow flex flex-col p-4 gap-4 overflow-y-auto custom-scrollbar">
  <div className="text-xs font-bold text-gray-600 uppercase tracking-wider">Live Video Stream</div>
  
  {/* Remote Peer Video */}
@@ -703,7 +703,7 @@ const Session = () => {
 
  {/* 3. COLLABORATIVE NOTES PANEL */}
  {activePanelTab ==='notes' && (
- <div className="flex-grow flex flex-col overflow-hidden bg-gray-100">
+ <div className="grow flex flex-col overflow-hidden bg-gray-100">
  <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
  <div className="flex items-center gap-2">
  <FileText className="h-4 w-4 text-emerald-400" />
@@ -711,12 +711,12 @@ const Session = () => {
  </div>
  <span className="text-[11px] text-emerald-400 font-medium">⚡ Real-time Synced</span>
  </div>
- <div className="flex-grow p-4 flex flex-col">
+ <div className="grow p-4 flex flex-col">
  <textarea 
  value={notes}
  onChange={handleNotesChange}
  placeholder="Write collaborative markdown notes here..."
- className="flex-grow w-full bg-white/50 border border-gray-200 rounded-xl p-3 resize-none outline-none text-xs sm:text-sm text-gray-800 font-mono leading-relaxed focus:border-emerald-500/50 transition-colors"
+ className="grow w-full bg-white/50 border border-gray-200 rounded-xl p-3 resize-none outline-none text-xs sm:text-sm text-gray-800 font-mono leading-relaxed focus:border-emerald-500/50 transition-colors"
  />
  </div>
  </div>

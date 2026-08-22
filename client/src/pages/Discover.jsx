@@ -56,7 +56,7 @@ const Discover = () => {
 
  {/* Filters & Search */}
  <div className="gfg-panel p-4 flex flex-col md:flex-row gap-4">
- <div className="relative flex-grow">
+ <div className="relative grow">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
  <input 
  type="text" 
@@ -95,7 +95,7 @@ const Discover = () => {
  </div>
  </div>
 
- <div className={`flex flex-col flex-grow ${view ==='grid' ?'' :'w-2/3'}`}>
+ <div className={`flex flex-col grow ${view ==='grid' ?'' :'w-2/3'}`}>
  <div className="mb-4">
  <div className="text-xs text-[var(--color-text-muted)] mb-2 uppercase tracking-wide font-bold">Skills Taught</div>
  <div className="flex flex-wrap gap-2">

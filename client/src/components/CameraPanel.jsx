@@ -68,7 +68,7 @@ const CameraPanel = () => {
  return (
  <div className="h-full w-full flex flex-col rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-xl font-sans relative group">
  {/* Video Viewport */}
- <div className="flex-grow w-full h-full relative bg-white overflow-hidden flex items-center justify-center">
+ <div className="grow w-full h-full relative bg-white overflow-hidden flex items-center justify-center">
  {isVideoOn && !error ? (
  <video 
  ref={videoRef} 

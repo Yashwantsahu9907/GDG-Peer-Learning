@@ -145,9 +145,9 @@ export default function CodeEditor() {
  </div>
 
  {/* Editor & Output Container */}
- <div className="flex-grow flex flex-col relative overflow-hidden">
+ <div className="grow flex flex-col relative overflow-hidden">
  {/* Editor Pane */}
- <div className="flex-grow relative overflow-hidden">
+ <div className="grow relative overflow-hidden">
  <Editor
  height="100%"
  language={language}
@@ -181,7 +181,7 @@ export default function CodeEditor() {
  ✕
  </button>
  </div>
- <div className="flex-grow p-3 overflow-y-auto font-mono text-xs">
+ <div className="grow p-3 overflow-y-auto font-mono text-xs">
  {output ? (
  <pre className={`whitespace-pre-wrap break-words leading-relaxed ${isError ?'text-red-600' :'text-black'}`}>
  {output}

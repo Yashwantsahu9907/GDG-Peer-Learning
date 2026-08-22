@@ -10,7 +10,7 @@ const Layout = () => {
  return (
  <div style={{ ...landingTheme, ...(isLanding ? { backgroundColor:'#ffffff' } : {}) }} className={`min-h-screen flex flex-col bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-colors duration-200 selection:bg-[var(--color-accent)] selection:text-white ${isLanding ?'landing-shell' :''}`}>
  <Navbar />
- <main className="flex-grow w-full pt-20">
+ <main className="grow w-full pt-20">
  <Outlet />
  </main>
  {location.pathname !=='/' && (
