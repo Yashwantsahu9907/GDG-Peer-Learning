@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { 
-  MapPin, Link as LinkIcon,
-  Users, Video, BookOpen, Star, Trophy, Clock,
-  CheckCircle2, Flame, Award,
-  Calendar, Code, Zap, Edit3, Settings, Shield
+  MapPin, Link as LinkIcon, Users, Video, BookOpen, Star, Trophy, Clock,
+  CheckCircle2, Flame, Award, Calendar, Code, Zap, Edit3, Settings, Shield,
+  UserPlus, UserMinus, UserCheck, MessageSquare, Plus, ExternalLink, X,
+  Search, Check, Heart, Sparkles
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Brand SVGs
 const GithubIcon = ({ className }) => (
@@ -19,7 +21,6 @@ const TwitterIcon = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
 );
 
-// Subcomponents
 const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-[var(--color-border)] rounded-xl ${className}`}></div>
 );
@@ -34,156 +35,210 @@ const Section = ({ title, children, action }) => (
   </div>
 );
 
-// MOCK API Client
-const fetchProfileData = async (_userId) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        basicInfo: {
-          name: "Sourabh",
-          username: "@sourabh08923",
-          bio: "Full-stack developer passionate about open source and systems design. Learning Rust and Kubernetes. Always happy to pair program!",
-          college: "National Institute of Technology",
-          department: "Computer Science",
-          year: "3rd Year",
-          location: "India",
-          website: "yashwant.dev",
-          github: "github.com/sourabh",
-          twitter: "twitter.com/sourabh",
-          linkedin: "linkedin.com/in/sourabh"
-        },
-        stats: {
-          followers: 142,
-          following: 89,
-          peersHelped: 312,
-          learningSessions: 84,
-          teachingSessions: 142,
-          projects: 12,
-          reputation: 4.9,
-          reviews: 38,
-          hoursLearned: 1248,
-          currentStreak: 14,
-          longestStreak: 42
-        },
-        teaching: [
-          { skill: "React", proficiency: "Advanced", sessions: 24, endorsements: 18 },
-          { skill: "JavaScript", proficiency: "Advanced", sessions: 31, endorsements: 22 },
-          { skill: "Node.js", proficiency: "Intermediate", sessions: 16, endorsements: 11 }
-        ],
-        learning: [
-          { skill: "Kubernetes", priority: "High Priority", progress: 70 },
-          { skill: "Rust", priority: "High Priority", progress: 35 },
-          { skill: "System Design", priority: "Medium Priority", progress: 45 }
-        ],
-        learningGoals: [
-          { title: "Become production-ready with Kubernetes", description: "Deploy a highly available microservices cluster.", progress: 70, target: "September 2026" }
-        ],
-        recentSessions: [
-          { topic: "React Hooks", role: "Mentor", peer: "Rahul", date: "Aug 18", duration: "60 min", rating: 5 },
-          { topic: "Node.js APIs", role: "Learner", peer: "Ankit", date: "Aug 16", duration: "45 min", rating: 5 }
-        ],
-        projects: [
-          { name: "GDGPeerPlatform", description: "Open source peer learning platform", tech: ["React", "Node", "MongoDB"], role: "Lead Developer", status: "Building" }
-        ],
-        achievements: [
-          "Top Mentor", "30 Day Learning Streak", "50 Peers Helped", "Open Source Contributor"
-        ],
-        availability: {
-          types: ["Pair Programming", "Mentoring", "Study Sessions"],
-          time: "Weekdays 7 PM — 10 PM"
-        },
-        peerMatches: [
-          { name: "Rahul", teaches: [], wants: ["React"], matchScore: 82 },
-          { name: "Priya", teaches: ["Kubernetes"], wants: [], matchScore: 91 }
-        ]
-      });
-    }, 1500);
-  });
-};
-
 const Profile = () => {
-  const { user } = useAuth();
+  const { userId } = useParams();
+  const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
-  const [isEditingBio, setIsEditingBio] = useState(false);
-  const [editBioText, setEditBioText] = useState("");
-  const [editWebsiteText, setEditWebsiteText] = useState("");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [friendsCount, setFriendsCount] = useState(0);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        // In a real app, this would fetch from /api/users/${userId}
-        const profileData = await fetchProfileData(user?._id || 'me');
-        
-        // Merge actual user data if available
-        if (user) {
-          profileData.basicInfo.name = user.name || profileData.basicInfo.name;
-          if (user.email) {
-            profileData.basicInfo.username = `@${user.email.split('@')[0]}`;
-          }
-          if (user.branch) {
-            profileData.basicInfo.department = user.branch;
-          }
-          if (user.semester) {
-            profileData.basicInfo.year = `Semester ${user.semester}`;
-          }
-          if (user.gdgCoins !== undefined) {
-            profileData.stats.gdgCoins = user.gdgCoins;
-          }
-          if (user.streak !== undefined) {
-            profileData.stats.currentStreak = user.streak;
-          }
-          if (user.longestStreak !== undefined) {
-            profileData.stats.longestStreak = user.longestStreak;
-          }
-          if (user.bio !== undefined && user.bio !== null && user.bio !== '') {
-            profileData.basicInfo.bio = user.bio;
-          }
-          if (user.website !== undefined) {
-            profileData.basicInfo.website = user.website;
-          }
-        }
-        
-        setData(profileData);
-        setEditBioText(profileData.basicInfo.bio);
-        setEditWebsiteText(profileData.basicInfo.website);
-      } catch (err) {
-        console.error("Failed to load profile", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [user]);
+  // Modals state
+  const [activeSocialModal, setActiveSocialModal] = useState(null); // 'followers' | 'following' | 'friends' | null
+  const [modalList, setModalList] = useState([]);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const handleSaveBio = async () => {
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    bio: '',
+    website: '',
+    github: '',
+    linkedin: '',
+    twitter: '',
+    location: '',
+    college: '',
+    skills: ''
+  });
+
+  const targetId = userId || 'me';
+
+  // Load Profile Data
+  const loadProfile = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ bio: editBioText, website: editWebsiteText })
+      const res = await fetch(`${API_URL}/users/${targetId}`, {
+        credentials: 'include'
       });
-      if (res.ok) {
-        setIsEditingBio(false);
-        setData({
-          ...data,
-          basicInfo: { ...data.basicInfo, bio: editBioText, website: editWebsiteText }
+      const resData = await res.json();
+      if (resData.success && resData.profile) {
+        setData(resData.profile);
+        setIsFollowing(resData.profile.isFollowing);
+        setIsFriend(resData.profile.isFriend);
+        setFollowersCount(resData.profile.stats.followers);
+        setFollowingCount(resData.profile.stats.following);
+        setFriendsCount(resData.profile.stats.friends || 0);
+
+        setEditForm({
+          bio: resData.profile.basicInfo.bio || '',
+          website: resData.profile.basicInfo.website || '',
+          github: resData.profile.basicInfo.github || '',
+          linkedin: resData.profile.basicInfo.linkedin || '',
+          twitter: resData.profile.basicInfo.twitter || '',
+          location: resData.profile.basicInfo.location || 'India',
+          college: resData.profile.basicInfo.college || '',
+          skills: (resData.profile.skills || []).join(', ')
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load profile', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadProfile();
+  }, [targetId, currentUser]);
+
+  // Toggle Follow Handler
+  const handleFollowToggle = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    const actionUserId = data?._id;
+    if (!actionUserId) return;
+
+    try {
+      const res = await fetch(`${API_URL}/users/${actionUserId}/follow`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setIsFollowing(resData.isFollowing);
+        setFollowersCount(resData.followersCount);
+        toast.success(resData.message);
+      }
+    } catch (err) {
+      toast.error('Failed to update follow status');
+    }
+  };
+
+  // Toggle Friend Handler
+  const handleFriendToggle = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    const actionUserId = data?._id;
+    if (!actionUserId) return;
+
+    try {
+      const res = await fetch(`${API_URL}/users/${actionUserId}/friend`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setIsFriend(resData.isFriend);
+        setFriendsCount(resData.friendsCount);
+        if (resData.isFriend) setIsFollowing(true);
+        toast.success(resData.message);
+      }
+    } catch (err) {
+      toast.error('Failed to update friend status');
+    }
+  };
+
+  // Open Social Modal (Followers / Following / Friends)
+  const openSocialModal = async (type) => {
+    setActiveSocialModal(type);
+    setModalLoading(true);
+    setModalList([]);
+    const actionUserId = data?._id || 'me';
+
+    try {
+      const res = await fetch(`${API_URL}/users/${actionUserId}/${type}`, {
+        credentials: 'include'
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setModalList(resData[type] || []);
+      }
+    } catch (err) {
+      toast.error(`Failed to load ${type}`);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Toggle Follow for item in modal
+  const handleModalFollowToggle = async (modalUser) => {
+    try {
+      const res = await fetch(`${API_URL}/users/${modalUser._id}/follow`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setModalList(prev => prev.map(u => u._id === modalUser._id ? { ...u, isFollowing: resData.isFollowing } : u));
+        toast.success(resData.message);
+      }
+    } catch (err) {
+      toast.error('Failed to update follow');
+    }
+  };
+
+  // Save Edit Profile Form
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const skillsArray = editForm.skills.split(',').map(s => s.trim()).filter(Boolean);
+      const res = await fetch(`${API_URL}/users/profile/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          bio: editForm.bio,
+          website: editForm.website,
+          github: editForm.github,
+          linkedin: editForm.linkedin,
+          twitter: editForm.twitter,
+          location: editForm.location,
+          college: editForm.college,
+          skills: skillsArray
+        })
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        toast.success('Profile updated successfully!');
+        setIsEditModalOpen(false);
+        loadProfile();
+      } else {
+        toast.error(resData.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      toast.error('Error saving profile');
+    }
+  };
+
+  const handleStartCollab = () => {
+    const roomId = `collab-${Math.random().toString(36).substring(2, 8)}`;
+    navigate(`/meeting/${roomId}`);
   };
 
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="bg-[var(--color-bg-primary)] p-8 rounded-2xl border border-[var(--color-border)] flex gap-8 items-start">
+        <div className="bg-[var(--color-bg-primary)] p-8 rounded-3xl border border-[var(--color-border)] flex gap-8 items-start">
           <Skeleton className="w-32 h-32 rounded-full shrink-0" />
           <div className="space-y-4 w-full">
             <Skeleton className="h-8 w-1/3" />
@@ -196,16 +251,6 @@ const Profile = () => {
           </div>
         </div>
         <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-          <div className="space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
-        </div>
       </div>
     );
   }
@@ -215,137 +260,242 @@ const Profile = () => {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--color-text-secondary)]">
         <Shield className="w-16 h-16 mb-4 opacity-50" />
         <h2 className="text-xl font-bold mb-2 text-[var(--color-text-primary)]">Profile Not Found</h2>
-        <p>We couldn't load this profile right now.</p>
+        <p>The requested peer profile could not be loaded.</p>
+        <Link to="/discover" className="mt-4 px-4 py-2 bg-black text-white font-semibold rounded-xl text-sm">
+          Back to Discover
+        </Link>
       </div>
     );
   }
 
-  const tabs = ['Overview', 'Skills', 'Learning', 'Sessions', 'Projects', 'Achievements', 'Activity'];
+  const isSelf = data.isOwnProfile || (currentUser && currentUser._id === data._id);
+  const tabs = ['Overview', 'Skills', 'Learning', 'Sessions', 'Projects', 'Achievements'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
       
-      {/* 1. Profile Header */}
+      {/* 1. Profile Hero Card */}
       <div className="bg-[var(--color-bg-primary)] rounded-3xl border border-[var(--color-border)] p-6 sm:p-10 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-[var(--color-accent)]/20 to-transparent"></div>
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent"></div>
         <div className="relative flex flex-col md:flex-row gap-8 items-start">
-          <div className="w-32 h-32 sm:w-40 sm:h-40 bg-[var(--color-bg-secondary)] border-4 border-[var(--color-bg-primary)] rounded-full flex items-center justify-center text-4xl sm:text-5xl font-bold text-[var(--color-text-primary)] shadow-md shrink-0 z-10 relative">
-            {data.basicInfo.name.charAt(0)}
+          
+          {/* Avatar */}
+          <div className="w-32 h-32 sm:w-40 sm:h-40 bg-[var(--color-bg-secondary)] border-4 border-[var(--color-bg-primary)] rounded-full flex items-center justify-center text-4xl sm:text-5xl font-extrabold text-[var(--color-text-primary)] shadow-md shrink-0 z-10 relative">
+            {data.basicInfo.name.charAt(0).toUpperCase()}
           </div>
           
           <div className="flex-1 w-full z-10">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
-                  {data.basicInfo.name}
-                </h1>
-                <p className="text-lg text-[var(--color-text-secondary)] font-medium mb-4">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
+                    {data.basicInfo.name}
+                  </h1>
+                  {data.stats.streak >= 3 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-700 text-xs font-bold" title={`${data.stats.streak} day streak!`}>
+                      <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
+                      {data.stats.streak}d
+                    </span>
+                  )}
+                </div>
+                <p className="text-lg text-[var(--color-text-secondary)] font-medium mb-3">
                   {data.basicInfo.username}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                {isEditingBio ? (
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3">
+                {isSelf ? (
                   <button 
-                    onClick={handleSaveBio}
-                    className="px-5 py-2.5 bg-[var(--color-accent)] text-white rounded-xl font-semibold hover:bg-[var(--color-accent-dark)] transition-colors flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Save Profile
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => setIsEditingBio(true)}
-                    className="px-5 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl font-semibold hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm shadow transition-all hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <Edit3 className="w-4 h-4" /> Edit Profile
                   </button>
+                ) : (
+                  <>
+                    {/* Follow / Unfollow */}
+                    <button 
+                      onClick={handleFollowToggle}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-sm shadow transition-all hover:-translate-y-0.5 flex items-center gap-2 ${
+                        isFollowing 
+                          ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-300' 
+                          : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                      }`}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck className="w-4 h-4 text-emerald-600" /> Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" /> Follow
+                        </>
+                      )}
+                    </button>
+
+                    {/* Add Friend / Friends */}
+                    <button
+                      onClick={handleFriendToggle}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-sm border transition-all flex items-center gap-2 ${
+                        isFriend 
+                          ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' 
+                          : 'bg-zinc-100 hover:bg-zinc-200 border-zinc-300 text-zinc-800'
+                      }`}
+                    >
+                      {isFriend ? (
+                        <>
+                          <Check className="w-4 h-4 text-blue-600" /> Friends
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" /> Add Friend
+                        </>
+                      )}
+                    </button>
+
+                    {/* Chat & Collab */}
+                    <Link
+                      to="/chat"
+                      className="p-2.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-800 rounded-xl transition-colors"
+                      title="Send Message"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </Link>
+
+                    <button
+                      onClick={handleStartCollab}
+                      className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow"
+                      title="Start Collab Room"
+                    >
+                      <Video className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Collab</span>
+                    </button>
+                  </>
                 )}
-                <button className="p-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-xl hover:border-[var(--color-accent)] transition-colors">
-                  <Settings className="w-5 h-5" />
-                </button>
               </div>
             </div>
 
-            {isEditingBio ? (
-              <textarea 
-                className="w-full max-w-3xl mb-6 p-4 rounded-xl border border-[var(--color-accent)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] text-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
-                rows={3}
-                value={editBioText}
-                onChange={(e) => setEditBioText(e.target.value)}
-              />
-            ) : (
-              <p className="text-[var(--color-text-primary)] text-lg leading-relaxed max-w-3xl mb-6 whitespace-pre-wrap">
-                {data.basicInfo.bio}
-              </p>
-            )}
+            <p className="text-[var(--color-text-primary)] text-base sm:text-lg leading-relaxed max-w-3xl mb-6 whitespace-pre-wrap">
+              {data.basicInfo.bio}
+            </p>
 
+            {/* Badges & Meta */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[var(--color-text-secondary)] font-medium">
-              <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {data.basicInfo.location}</div>
-              <div className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {data.basicInfo.college}</div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.department}</div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.year}</div>
-              {isEditingBio ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] border border-[var(--color-accent)] transition-colors">
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  <input 
-                    type="text" 
-                    placeholder="Website URL"
-                    className="bg-transparent focus:outline-none text-xs w-32"
-                    value={editWebsiteText}
-                    onChange={(e) => setEditWebsiteText(e.target.value)}
-                  />
-                </div>
-              ) : data.basicInfo.website ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors cursor-pointer"><LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}</div>
-              ) : null}
+              <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-gray-400" /> {data.basicInfo.location}</div>
+              <div className="flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-gray-400" /> {data.basicInfo.college}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.department}</div>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-[var(--color-text-primary)] font-bold text-xs">{data.basicInfo.year}</div>
+              
+              {data.basicInfo.website && (
+                <a href={data.basicInfo.website.startsWith('http') ? data.basicInfo.website : `https://${data.basicInfo.website}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-primary)] hover:text-emerald-600 transition-colors">
+                  <LinkIcon className="w-3.5 h-3.5" /> {data.basicInfo.website}
+                </a>
+              )}
+
               <div className="flex items-center gap-4 ml-auto">
-                <GithubIcon className="w-5 h-5 hover:text-[var(--color-text-primary)] cursor-pointer transition-colors" />
-                <LinkedinIcon className="w-5 h-5 hover:text-[#0a66c2] cursor-pointer transition-colors" />
-                <TwitterIcon className="w-5 h-5 hover:text-[#1da1f2] cursor-pointer transition-colors" />
+                {data.basicInfo.github && (
+                  <a href={data.basicInfo.github.startsWith('http') ? data.basicInfo.github : `https://${data.basicInfo.github}`} target="_blank" rel="noreferrer">
+                    <GithubIcon className="w-5 h-5 text-gray-600 hover:text-black transition-colors" />
+                  </a>
+                )}
+                {data.basicInfo.linkedin && (
+                  <a href={data.basicInfo.linkedin.startsWith('http') ? data.basicInfo.linkedin : `https://${data.basicInfo.linkedin}`} target="_blank" rel="noreferrer">
+                    <LinkedinIcon className="w-5 h-5 text-[#0a66c2] hover:opacity-80 transition-opacity" />
+                  </a>
+                )}
+                {data.basicInfo.twitter && (
+                  <a href={data.basicInfo.twitter.startsWith('http') ? data.basicInfo.twitter : `https://${data.basicInfo.twitter}`} target="_blank" rel="noreferrer">
+                    <TwitterIcon className="w-5 h-5 text-[#1da1f2] hover:opacity-80 transition-opacity" />
+                  </a>
+                )}
               </div>
             </div>
           </div>
         </div>
         
-        {/* 2. Social Stats */}
+        {/* 2. Interactive Social Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mt-10 pt-6 border-t border-[var(--color-border)] relative z-10">
-          <div className="cursor-pointer group">
-            <div className="flex items-center gap-1.5">
-              <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.gdgCoins || 0}</p>
-              <Award className="w-5 h-5 text-[var(--color-accent)]" />
+          
+          {/* Followers (Clickable Modal) */}
+          <div 
+            onClick={() => openSocialModal('followers')} 
+            className="p-3 rounded-2xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/80 cursor-pointer transition-all hover:scale-105 group"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-zinc-950 group-hover:text-emerald-600 transition-colors">
+                {followersCount}
+              </p>
+              <Users className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600" />
             </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">GDG Coins</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Followers</p>
           </div>
-          <div className="cursor-pointer group">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{data.stats.followers}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Followers</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.peersHelped}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Peers Helped</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.teachingSessions}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Sessions Taught</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.learningSessions}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Sessions Attended</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{data.stats.projects}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Projects</p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <p className="text-2xl font-bold text-[var(--color-accent)]">{data.stats.reputation}</p>
-              <Star className="w-5 h-5 fill-[var(--color-accent)] text-[var(--color-accent)]" />
+
+          {/* Following (Clickable Modal) */}
+          <div 
+            onClick={() => openSocialModal('following')} 
+            className="p-3 rounded-2xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/80 cursor-pointer transition-all hover:scale-105 group"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-zinc-950 group-hover:text-blue-600 transition-colors">
+                {followingCount}
+              </p>
+              <UserCheck className="w-4 h-4 text-zinc-400 group-hover:text-blue-600" />
             </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{data.stats.reviews} Reviews</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Following</p>
           </div>
+
+          {/* Friends (Clickable Modal) */}
+          <div 
+            onClick={() => openSocialModal('friends')} 
+            className="p-3 rounded-2xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/80 cursor-pointer transition-all hover:scale-105 group"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-zinc-950 group-hover:text-purple-600 transition-colors">
+                {friendsCount}
+              </p>
+              <Heart className="w-4 h-4 text-zinc-400 group-hover:text-purple-600" />
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Friends</p>
+          </div>
+
+          {/* GDG Coins */}
+          <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-yellow-600">{data.stats.gdgCoins || 100}</p>
+              <Award className="w-4 h-4 text-yellow-500" />
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Coins</p>
+          </div>
+
+          {/* Streak */}
+          <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-orange-600">{data.stats.streak || 1}d</p>
+              <Flame className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Streak</p>
+          </div>
+
+          {/* Sessions */}
+          <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+            <p className="text-2xl font-black text-zinc-950">{data.stats.learningSessions + data.stats.teachingSessions}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">Sessions</p>
+          </div>
+
+          {/* Reputation */}
+          <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-black text-emerald-600">{data.stats.reputation}</p>
+              <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mt-1">{data.stats.reviews} Reviews</p>
+          </div>
+
         </div>
       </div>
 
-      {/* 14. Profile Navigation */}
+      {/* Profile Navigation Tabs */}
       <div className="flex overflow-x-auto hide-scrollbar border-b border-[var(--color-border)]">
         <div className="flex space-x-8 min-w-max px-2">
           {tabs.map((tab) => (
@@ -367,203 +517,63 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* Tab Content & Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-8">
           
-          {/* 6. Peer Activity Heatmap */}
-          <Section title="Learning Activity">
-            <div className="overflow-x-auto pb-4">
-              <div className="min-w-[650px]">
-                <div className="flex text-xs text-[var(--color-text-muted)] mb-2 font-medium">
-                  <div className="w-8"></div>
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => (
-                    <div key={m} className="flex-1">{m}</div>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  <div className="flex flex-col justify-between text-xs text-[var(--color-text-muted)] font-medium pr-2">
-                    <span>Mon</span>
-                    <span>Wed</span>
-                    <span>Fri</span>
-                  </div>
-                  <div className="flex-1 flex gap-1">
-                    {[...Array(52)].map((_, w) => (
-                      <div key={w} className="flex flex-col gap-1 flex-1">
-                        {[...Array(7)].map((_, d) => {
-                          // Random intensity for realistic look
-                          const intensity = Math.random() > 0.6 ? Math.floor(Math.random() * 4) + 1 : 0;
-                          const bg = intensity === 0 ? 'bg-[var(--color-bg-secondary)] border border-[var(--color-border)]' : 
-                                     intensity === 1 ? 'bg-emerald-200 dark:bg-emerald-900/40' :
-                                     intensity === 2 ? 'bg-emerald-400 dark:bg-emerald-700/60' :
-                                     intensity === 3 ? 'bg-emerald-500 dark:bg-emerald-500/80' : 
-                                     'bg-emerald-600 dark:bg-emerald-400';
-                          return <div key={d} className={`w-full aspect-square rounded-sm ${bg}`}></div>
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-end items-center gap-2 mt-4 text-xs text-[var(--color-text-muted)] font-medium">
-                  <span>Less</span>
-                  <div className="w-3 h-3 rounded-sm bg-[var(--color-bg-secondary)] border border-[var(--color-border)]"></div>
-                  <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-900/40"></div>
-                  <div className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-700/60"></div>
-                  <div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-500/80"></div>
-                  <div className="w-3 h-3 rounded-sm bg-emerald-600 dark:bg-emerald-400"></div>
-                  <span>More</span>
-                </div>
-              </div>
+          {/* Skills & Technologies */}
+          <Section 
+            title="Skills & Technologies"
+            action={isSelf && <button onClick={() => setIsEditModalOpen(true)} className="text-sm font-semibold text-emerald-600 hover:underline">Edit Skills</button>}
+          >
+            <div className="flex flex-wrap gap-2">
+              {(data.skills || []).map((skill, i) => (
+                <span key={i} className="px-4 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-bold text-sm border border-zinc-200 transition-colors">
+                  {skill}
+                </span>
+              ))}
             </div>
           </Section>
 
-          {/* 3. I Can Teach */}
-          <Section 
-            title="I Can Teach" 
-            action={<button className="text-sm font-semibold text-[var(--color-accent)] hover:underline">Add Skill</button>}
-          >
-            {data.teaching.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-[var(--color-text-secondary)] mb-2">No teaching skills added yet</p>
-                <button className="px-4 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] hover:border-[var(--color-accent)] transition-colors">Start building your teaching profile</button>
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
-                {data.teaching.map((skill, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-900/10 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-lg">{skill.skill}</h3>
-                      <span className="px-2 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">{skill.proficiency}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-emerald-600 dark:text-emerald-500 font-medium">
-                      <span className="flex items-center gap-1.5"><Video className="w-4 h-4" /> {skill.sessions} sessions</span>
-                      <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {skill.endorsements} endorsements</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
-
-          {/* 4. I Want To Learn */}
-          <Section 
-            title="I Want To Learn"
-            action={<button className="text-sm font-semibold text-[var(--color-accent)] hover:underline">Add Skill</button>}
-          >
-            {data.learning.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-[var(--color-text-secondary)] mb-2">No learning goals yet</p>
-                <button className="px-4 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] hover:border-[var(--color-accent)] transition-colors">Add something you want to learn</button>
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
-                {data.learning.map((skill, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-blue-800 dark:text-blue-400 text-lg">{skill.skill}</h3>
-                      <span className="px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">{skill.priority}</span>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs font-bold text-blue-600 dark:text-blue-400 mb-1.5">
-                        <span>Progress</span>
-                        <span>{skill.progress}%</span>
-                      </div>
-                      <div className="w-full bg-blue-200 dark:bg-blue-900/40 rounded-full h-1.5">
-                        <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${skill.progress}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
-
-          {/* 5. Learning Goals */}
-          <Section title="Current Learning Goals" action={<button className="text-sm font-semibold text-[var(--color-accent)] hover:underline">Manage Goals</button>}>
-            <div className="space-y-4">
-              {data.learningGoals.map((goal, i) => (
-                <div key={i} className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+          {/* I Can Teach */}
+          <Section title="I Can Teach">
+            <div className="grid sm:grid-cols-2 gap-4">
+              {(data.teaching || []).map((skill, i) => (
+                <div key={i} className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-[var(--color-text-primary)] text-lg">{goal.title}</h3>
-                    <span className="text-xs font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Target: {goal.target}</span>
+                    <h3 className="font-bold text-emerald-900 text-lg">{skill.skill}</h3>
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold uppercase">{skill.proficiency}</span>
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)] mb-4">{goal.description}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="w-full bg-[var(--color-border)] rounded-full h-2">
-                        <div className="bg-[var(--color-accent)] h-2 rounded-full relative" style={{ width: `${goal.progress}%` }}>
-                           <span className="absolute -right-3 -top-6 text-xs font-bold text-[var(--color-accent)]">{goal.progress}%</span>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-4 text-sm text-emerald-700 font-medium">
+                    <span className="flex items-center gap-1.5"><Video className="w-4 h-4" /> {skill.sessions} sessions</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {skill.endorsements} endorsements</span>
                   </div>
                 </div>
               ))}
             </div>
           </Section>
 
-          {/* 9. Recent Sessions */}
-          <Section title="Recent Learning Sessions">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)] text-sm text-[var(--color-text-muted)] uppercase tracking-wider">
-                    <th className="pb-3 font-semibold">Topic</th>
-                    <th className="pb-3 font-semibold">Role</th>
-                    <th className="pb-3 font-semibold">Peer</th>
-                    <th className="pb-3 font-semibold">Date</th>
-                    <th className="pb-3 font-semibold text-right">Rating</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {data.recentSessions.map((session, i) => (
-                    <tr key={i} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg-secondary)] transition-colors">
-                      <td className="py-4 font-bold text-[var(--color-text-primary)]">{session.topic}</td>
-                      <td className="py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase ${session.role === 'Mentor' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                          {session.role}
-                        </span>
-                      </td>
-                      <td className="py-4 font-medium flex items-center gap-2 text-[var(--color-text-secondary)]">
-                        <div className="w-6 h-6 rounded-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] flex items-center justify-center text-[10px] font-bold">{session.peer[0]}</div>
-                        {session.peer}
-                      </td>
-                      <td className="py-4 text-[var(--color-text-secondary)]">{session.date} • {session.duration}</td>
-                      <td className="py-4 text-right">
-                        <div className="flex justify-end text-yellow-400">
-                          {[...Array(session.rating)].map((_, j) => <Star key={j} className="w-4 h-4 fill-current" />)}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* I Want To Learn */}
+          <Section title="I Want To Learn">
+            <div className="grid sm:grid-cols-2 gap-4">
+              {(data.learning || []).map((skill, i) => (
+                <div key={i} className="p-4 rounded-2xl border border-blue-200 bg-blue-50/50 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-blue-900 text-lg">{skill.skill}</h3>
+                    <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 text-xs font-bold uppercase">{skill.priority}</span>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-bold text-blue-700 mb-1.5">
+                      <span>Progress</span>
+                      <span>{skill.progress}%</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${skill.progress}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <button className="mt-4 text-sm font-semibold text-[var(--color-accent)] hover:underline w-full text-center">View All Sessions</button>
-          </Section>
-
-          {/* 10. Projects */}
-          <Section title="Projects & Collaborations">
-             <div className="grid sm:grid-cols-2 gap-4">
-               {data.projects.map((project, i) => (
-                 <div key={i} className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] hover:border-[var(--color-accent)] transition-colors">
-                   <div className="flex justify-between items-start mb-2">
-                     <h3 className="font-bold text-[var(--color-text-primary)] text-lg flex items-center gap-2"><Code className="w-5 h-5 text-[var(--color-accent)]"/> {project.name}</h3>
-                     <span className="px-2 py-1 bg-[var(--color-bg-secondary)] rounded-md text-xs font-bold text-[var(--color-text-secondary)] border border-[var(--color-border)]">{project.status}</span>
-                   </div>
-                   <p className="text-sm text-[var(--color-text-secondary)] mb-4">{project.description}</p>
-                   <div className="flex flex-wrap gap-2 mb-4">
-                     {project.tech.map(t => <span key={t} className="px-2 py-1 bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-md text-xs font-semibold border border-[var(--color-border)]">{t}</span>)}
-                   </div>
-                   <div className="flex justify-between items-center pt-4 border-t border-[var(--color-border)]">
-                     <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Role: <span className="text-[var(--color-text-primary)]">{project.role}</span></span>
-                     <div className="flex gap-2">
-                       <GithubIcon className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer" />
-                       <LinkIcon className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer" />
-                     </div>
-                   </div>
-                 </div>
-               ))}
-             </div>
           </Section>
 
         </div>
@@ -571,105 +581,67 @@ const Profile = () => {
         {/* Sidebar */}
         <div className="space-y-8">
           
-          {/* 13. Peer Matching */}
-          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500 fill-yellow-500"/> Great Learning Matches</h2>
+          {/* Quick Connect Card */}
+          {!isSelf && (
+            <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-lg font-bold">Collaborate with {data.basicInfo.name.split(' ')[0]}</h2>
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Connect on projects, schedule 1-on-1 mentorship, or launch an instant shared code room.
+              </p>
+              <div className="flex flex-col gap-2 pt-2">
+                <button 
+                  onClick={handleStartCollab}
+                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-2"
+                >
+                  <Video className="w-4 h-4" /> Start Collab Session
+                </button>
+                <Link 
+                  to="/chat"
+                  className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-xl transition-colors text-center block"
+                >
+                  Send Direct Message
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Activity Statistics */}
+          <Section title="Learning Highlights">
             <div className="space-y-4">
-              {data.peerMatches.map((match, i) => (
-                <div key={i} className="bg-white dark:bg-[var(--color-bg-primary)] p-4 rounded-xl border border-indigo-50 dark:border-[var(--color-border)] shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center font-bold text-indigo-700 dark:text-indigo-400">{match.name[0]}</div>
-                      <span className="font-bold text-[var(--color-text-primary)]">{match.name}</span>
-                    </div>
-                    <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-800">{match.matchScore}% Match</span>
-                  </div>
-                  <p className="text-xs text-[var(--color-text-secondary)] mb-3">
-                    {match.wants.length > 0 ? <><span className="font-semibold text-[var(--color-text-primary)]">{match.name}</span> wants to learn <span className="font-semibold text-[var(--color-text-primary)]">{match.wants.join(', ')}</span></> : <><span className="font-semibold text-[var(--color-text-primary)]">{match.name}</span> can teach <span className="font-semibold text-[var(--color-text-primary)]">{match.teaches.join(', ')}</span></>}
-                  </p>
-                  <button className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors">
-                    {match.wants.length > 0 ? 'Connect' : 'Start Learning'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 7. Learning & Teaching Statistics */}
-          <Section title="Career Stats">
-            <div className="space-y-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border)] flex items-center justify-center"><Clock className="w-6 h-6 text-[var(--color-text-secondary)]" /></div>
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold">
+                  <Clock className="w-5 h-5" />
+                </div>
                 <div>
-                  <p className="text-xl font-bold text-[var(--color-text-primary)]">{data.stats.hoursLearned}</p>
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Hours Learned</p>
+                  <p className="text-lg font-bold text-zinc-900">{data.stats.hoursLearned} Hours</p>
+                  <p className="text-xs text-zinc-500 uppercase font-semibold">Total Learning Time</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border)] flex items-center justify-center"><Video className="w-6 h-6 text-[var(--color-text-secondary)]" /></div>
-                <div>
-                  <p className="text-xl font-bold text-[var(--color-text-primary)]">{data.stats.teachingSessions}</p>
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Sessions Hosted</p>
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold">
+                  <Users className="w-5 h-5" />
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border)] flex items-center justify-center"><Users className="w-6 h-6 text-[var(--color-text-secondary)]" /></div>
                 <div>
-                  <p className="text-xl font-bold text-[var(--color-text-primary)]">{data.stats.peersHelped}</p>
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Peers Helped</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-xl border border-orange-100 dark:border-orange-900/30">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center"><Flame className="w-5 h-5 text-orange-500" /></div>
-                <div>
-                  <p className="text-lg font-bold text-orange-700 dark:text-orange-400">{data.stats.currentStreak} Day</p>
-                  <p className="text-xs font-bold text-orange-600/70 dark:text-orange-500/70 uppercase tracking-wider">Current Streak</p>
+                  <p className="text-lg font-bold text-zinc-900">{data.stats.peersHelped}</p>
+                  <p className="text-xs text-zinc-500 uppercase font-semibold">Peers Helped</p>
                 </div>
               </div>
             </div>
           </Section>
 
-          {/* 8. Peer Reputation */}
-          <Section title="Peer Reputation">
-            <div className="text-center mb-6">
-              <p className="text-5xl font-extrabold text-[var(--color-text-primary)] mb-2">{data.stats.reputation}</p>
-              <div className="flex justify-center gap-1 text-yellow-400 mb-2">
-                {[1,2,3,4,5].map(i => <Star key={i} className="w-5 h-5 fill-current" />)}
-              </div>
-              <p className="text-sm text-[var(--color-text-secondary)]">Based on {data.stats.reviews} peer reviews</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              <span className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-xs font-bold text-[var(--color-text-primary)]">Helpful +24</span>
-              <span className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-xs font-bold text-[var(--color-text-primary)]">Clear Communicator +18</span>
-              <span className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-xs font-bold text-[var(--color-text-primary)]">Great Mentor +15</span>
-              <span className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full text-xs font-bold text-[var(--color-text-primary)]">Reliable +12</span>
-            </div>
-          </Section>
-
-          {/* 11. Achievements */}
-          <Section title="Achievements">
-            <div className="flex flex-col gap-3">
-              {data.achievements.map((ach, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] hover:border-[var(--color-accent)] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center border border-purple-200 dark:border-purple-800/50 shrink-0">
-                    <Trophy className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <span className="font-bold text-sm text-[var(--color-text-primary)]">{ach}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          {/* 12. Availability */}
-          <Section title="Available For">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-text-primary)]">
-                <Clock className="w-4 h-4 text-[var(--color-accent)]" /> {data.availability.time}
+          {/* Availability */}
+          <Section title="Availability">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-zinc-900">
+                <Clock className="w-4 h-4 text-emerald-600" /> {data.availability.time}
               </div>
               <div className="flex flex-wrap gap-2">
-                {data.availability.types.map(type => (
-                  <span key={type} className="px-3 py-1.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--color-text-primary)]">
-                    {type}
+                {data.availability.types.map((t, i) => (
+                  <span key={i} className="px-3 py-1.5 bg-zinc-100 rounded-lg text-xs font-bold text-zinc-800">
+                    {t}
                   </span>
                 ))}
               </div>
@@ -678,6 +650,230 @@ const Profile = () => {
 
         </div>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* Social List Modal (Followers / Following / Friends)           */}
+      {/* ------------------------------------------------------------- */}
+      {activeSocialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-zinc-200 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-zinc-100 text-zinc-800">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-950 capitalize">{activeSocialModal}</h3>
+                  <p className="text-xs text-zinc-500">{modalList.length} total peers</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveSocialModal(null)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal List */}
+            <div className="flex-grow overflow-y-auto space-y-3 py-2">
+              {modalLoading ? (
+                <div className="space-y-3 p-4">
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                </div>
+              ) : modalList.length === 0 ? (
+                <div className="py-12 text-center text-zinc-500 space-y-2">
+                  <Users className="w-10 h-10 mx-auto text-zinc-300" />
+                  <p className="font-semibold text-sm">No {activeSocialModal} yet</p>
+                </div>
+              ) : (
+                modalList.map((item) => (
+                  <div key={item._id} className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 transition-all">
+                    
+                    {/* User Info Link */}
+                    <div 
+                      onClick={() => {
+                        setActiveSocialModal(null);
+                        navigate(`/profile/${item._id}`);
+                      }}
+                      className="flex items-center gap-3 cursor-pointer group flex-grow mr-2"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
+                        {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-zinc-950 group-hover:text-emerald-600 transition-colors truncate">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-zinc-500 truncate">
+                          {item.username} • {item.branch || 'CSE'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    {currentUser && currentUser._id !== item._id && (
+                      <button
+                        onClick={() => handleModalFollowToggle(item)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                          item.isFollowing
+                            ? 'bg-zinc-200 hover:bg-zinc-300 text-zinc-800'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+                        }`}
+                      >
+                        {item.isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-zinc-100 shrink-0">
+              <button
+                onClick={() => setActiveSocialModal(null)}
+                className="w-full py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* Edit Profile Modal                                            */}
+      {/* ------------------------------------------------------------- */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-zinc-200 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <h3 className="text-xl font-bold text-zinc-950">Edit Profile</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1 text-zinc-400 hover:text-zinc-800 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">Bio</label>
+                <textarea
+                  rows={3}
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  placeholder="Tell peers what you love to build and learn..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">Skills (comma separated)</label>
+                <input
+                  type="text"
+                  value={editForm.skills}
+                  onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
+                  placeholder="React, Node.js, Python, TypeScript"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">College / Institute</label>
+                  <input
+                    type="text"
+                    value={editForm.college}
+                    onChange={(e) => setEditForm({ ...editForm, college: e.target.value })}
+                    placeholder="e.g. NIT / IIT / State Univ"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={editForm.location}
+                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                    placeholder="e.g. Bengaluru, India"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">Website URL</label>
+                <input
+                  type="text"
+                  value={editForm.website}
+                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                  placeholder="https://yourportfolio.dev"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-600 mb-1">GitHub</label>
+                  <input
+                    type="text"
+                    value={editForm.github}
+                    onChange={(e) => setEditForm({ ...editForm, github: e.target.value })}
+                    placeholder="github.com/username"
+                    className="w-full px-2.5 py-2 rounded-xl bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-600 mb-1">LinkedIn</label>
+                  <input
+                    type="text"
+                    value={editForm.linkedin}
+                    onChange={(e) => setEditForm({ ...editForm, linkedin: e.target.value })}
+                    placeholder="linkedin.com/in/username"
+                    className="w-full px-2.5 py-2 rounded-xl bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-600 mb-1">Twitter (X)</label>
+                  <input
+                    type="text"
+                    value={editForm.twitter}
+                    onChange={(e) => setEditForm({ ...editForm, twitter: e.target.value })}
+                    placeholder="twitter.com/username"
+                    className="w-full px-2.5 py-2 rounded-xl bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs shadow"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

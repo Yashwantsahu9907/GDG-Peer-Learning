@@ -1,7 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Code, Flame, Coins, Search, Menu, User, Bell, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, MessageSquare } from 'lucide-react';
+import { 
+  Code, Flame, Coins, Search, Menu, User, Bell, LogOut, 
+  ChevronDown, Compass, Award, Users, Settings as SettingsIcon, 
+  MessageSquare, UserPlus, UserCheck, X, Loader2
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config';
 import ChatWidget from './chat/ChatWidget';
 import NotificationsDropdown from './Notifications';
 
@@ -10,20 +15,84 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Search Peers API with Debounce
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+
+    if (!val.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setIsSearchOpen(true);
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}/users/search?q=${encodeURIComponent(val.trim())}`, {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.success) {
+          setSearchResults(data.users || []);
+        }
+      } catch (err) {
+        console.error('Search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+  };
+
+  // Quick Follow Toggle from Search Results
+  const handleQuickFollow = async (e, targetUser) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`${API_URL}/users/${targetUser._id}/follow`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSearchResults(prev => prev.map(u => u._id === targetUser._id ? { ...u, isFollowing: data.isFollowing } : u));
+        toast.success(data.message);
+      }
+    } catch (err) {
+      toast.error('Failed to follow');
+    }
+  };
 
   const handleNavClick = (e, path) => {
     setIsMobileMenuOpen(false);
@@ -85,17 +154,87 @@ const Navbar = () => {
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
-                <div className="hidden xl:flex relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search peers..." 
-                    className="w-48 bg-zinc-100 border border-zinc-300 rounded-full pl-9 pr-4 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-black transition-all"
-                  />
+                
+                {/* 1. Live Peer Search */}
+                <div className="relative" ref={searchRef}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                    <input 
+                      type="text" 
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      onFocus={() => searchQuery.trim() && setIsSearchOpen(true)}
+                      placeholder="Search peers & skills..." 
+                      className="w-44 sm:w-56 bg-zinc-100 border border-zinc-300 rounded-full pl-9 pr-8 py-1.5 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-black focus:w-64 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => { setSearchQuery(''); setSearchResults([]); setIsSearchOpen(false); }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {isSearchOpen && (
+                    <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-72 sm:w-80 bg-white rounded-2xl border border-zinc-200 shadow-2xl overflow-hidden z-50 animate-in fade-in duration-150 max-h-96 flex flex-col">
+                      <div className="p-2.5 border-b border-zinc-100 bg-zinc-50 flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                        <span>Peer Search</span>
+                        {isSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />}
+                      </div>
+
+                      <div className="overflow-y-auto p-2 space-y-1.5 divide-y divide-zinc-50">
+                        {searchResults.length === 0 && !isSearching ? (
+                          <div className="p-4 text-center text-xs text-zinc-500">
+                            No peers found matching "{searchQuery}"
+                          </div>
+                        ) : (
+                          searchResults.map((u) => (
+                            <div 
+                              key={u._id}
+                              onClick={() => {
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                                navigate(`/profile/${u._id}`);
+                              }}
+                              className="pt-1.5 first:pt-0 flex items-center justify-between p-2 hover:bg-zinc-50 rounded-xl cursor-pointer transition-colors group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 mr-2">
+                                <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                  {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-zinc-900 group-hover:text-emerald-600 transition-colors truncate">
+                                    {u.name}
+                                  </p>
+                                  <p className="text-[11px] text-zinc-500 truncate">
+                                    {u.username} • {u.branch || 'CSE'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={(e) => handleQuickFollow(e, u)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                                  u.isFollowing 
+                                    ? 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300' 
+                                    : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs'
+                                }`}
+                              >
+                                {u.isFollowing ? 'Following' : 'Follow'}
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats Badges */}
-                <div className="hidden md:flex items-center gap-2 mr-2">
+                <div className="hidden md:flex items-center gap-2 mr-1">
                   <div className="flex items-center gap-1.5 bg-zinc-100 border border-zinc-200 rounded-full px-3 py-1" title={`${user.streak || 1} day login streak`}>
                     <Flame className="h-4 w-4 text-orange-500" />
                     <span className="text-xs font-bold text-zinc-900">{user.streak || 1}</span>
@@ -112,6 +251,7 @@ const Navbar = () => {
                   <button 
                     onClick={() => setIsChatOpen(!isChatOpen)}
                     className={`p-2 transition-colors relative rounded-full ${isChatOpen ? 'bg-black text-white' : 'text-zinc-600 hover:bg-zinc-100 hover:text-black'}`}
+                    title="Open chat"
                   >
                     <MessageSquare className="h-5 w-5" />
                   </button>
@@ -149,7 +289,7 @@ const Navbar = () => {
                       <div className="py-2 border-t border-zinc-100">
                         <p className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1 mt-1">Workspace</p>
                         <Link to="/discover" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-black transition-colors group">
-                          <Compass className="h-4 w-4 text-zinc-400 group-hover:text-black transition-colors" /> Discover
+                          <Compass className="h-4 w-4 text-zinc-400 group-hover:text-black transition-colors" /> Discover Peers
                         </Link>
                         <Link to="/points" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-black transition-colors group">
                           <Coins className="h-4 w-4 text-zinc-400 group-hover:text-black transition-colors" /> Points
@@ -166,9 +306,6 @@ const Navbar = () => {
                       </div>
                       
                       <div className="py-2 border-t border-zinc-100">
-                        <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-black transition-colors group">
-                          <SettingsIcon className="h-4 w-4 text-zinc-400 group-hover:text-black transition-colors" /> Settings
-                        </Link>
                         <button 
                           onClick={() => { setIsDropdownOpen(false); logout(); }}
                           className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
