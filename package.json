@@ -1,4 +1,13 @@
 {
+  "name": "gdg-peer-learning",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
+    "start": "npm --prefix server start",
+    "dev": "npm --prefix server run dev"
+  },
   "dependencies": {
     "uuid": "^14.0.1"
   }

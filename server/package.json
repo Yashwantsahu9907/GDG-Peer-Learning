@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build": "npm --prefix ../client install && npm --prefix ../client run build",
+    "render-build": "npm --prefix ../client install && npm --prefix ../client run build && npm install"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
