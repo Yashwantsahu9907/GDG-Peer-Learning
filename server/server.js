@@ -141,6 +141,7 @@ io.on('connection', (socket) => {
         senderName: data.senderName || 'Anonymous',
         text: data.text,
         replyTo: data.replyTo || null,
+        mentions: data.mentions || [],
         timestamp: new Date()
       };
       
@@ -153,21 +154,18 @@ io.on('connection', (socket) => {
 
       io.to('global_chat').emit('receive_global_message', savedMsg);
       
-      // Check for mentions in global chat
-      const mentionRegex = /@(\w+)/g;
-      const matches = [...(data.text || '').matchAll(mentionRegex)];
-      const mentionedUsernames = [...new Set(matches.map(m => m[1]))];
-
-      for (const username of mentionedUsernames) {
-        const mentionedUser = await User.findOne({ name: username });
-        if (mentionedUser && mentionedUser._id.toString() !== msgData.senderId) {
-          await createNotification({
-            recipientId: mentionedUser._id.toString(),
-            senderId: msgData.senderId,
-            type: 'MENTION',
-            message: 'mentioned you in global chat.',
-            link: `/chat/global`
-          }, io);
+      // Process structured mentions
+      if (msgData.mentions && msgData.mentions.length > 0) {
+        for (const mention of msgData.mentions) {
+          if (mention.userId !== msgData.senderId) {
+            await createNotification({
+              recipientId: mention.userId,
+              senderId: msgData.senderId,
+              type: 'MENTION',
+              message: 'mentioned you in global chat.',
+              link: `/chat`
+            }, io);
+          }
         }
       }
     } catch (err) {
@@ -417,6 +415,16 @@ io.on('connection', (socket) => {
 });
 
 // User API routes
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find({}).select('name _id avatar').lean();
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ success: false, message: 'Unable to fetch users' });
+  }
+});
+
 app.post('/api/users', async (req, res) => {
   try {
     const { name } = req.body;
