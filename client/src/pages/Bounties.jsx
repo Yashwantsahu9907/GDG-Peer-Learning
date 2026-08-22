@@ -127,7 +127,7 @@ const Bounties = () => {
  ) : filteredBounties.map(bounty => (
  <div key={bounty._id} className="p-5 gfg-panel card-hover flex flex-col sm:flex-row gap-4 sm:items-center">
  
- <div className="flex-grow">
+ <div className="grow">
  <div className="flex items-center gap-3 mb-2">
  <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${
  bounty.status ==='Open' ?'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 

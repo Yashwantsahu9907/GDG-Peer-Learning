@@ -364,7 +364,7 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  {/* Canvas Area with subtle grid pattern */}
  <div 
  ref={containerRef} 
- className="flex-grow w-full h-full relative overflow-hidden bg-white"
+ className="grow w-full h-full relative overflow-hidden bg-white"
  style={{ 
  backgroundImage:'radial-gradient(#e5e7eb 1px, transparent 1px)', 
  backgroundSize:'24px 24px' 

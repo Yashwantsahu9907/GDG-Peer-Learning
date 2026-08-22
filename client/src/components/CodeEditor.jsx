@@ -19,90 +19,185 @@ const LANGUAGES = [
   { value: 'java', label: 'Java' }
 ];
 
-export default function CodeEditor({ roomId = null, initialLanguage = 'javascript', initialCode = null }) {
-  const [language, setLanguage] = useState(initialLanguage);
-  const [code, setCode] = useState(initialCode || BOILERPLATES[initialLanguage] || BOILERPLATES.javascript);
-  const [output, setOutput] = useState('');
-  const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showConsole, setShowConsole] = useState(true);
-  const [copied, setCopied] = useState(false);
+export default function CodeEditor() {
+ const [language, setLanguage] = useState('javascript');
+ const [code, setCode] = useState(BOILERPLATES['javascript']);
+ const [output, setOutput] = useState('');
+ const [isError, setIsError] = useState(false);
+ const [isLoading, setIsLoading] = useState(false);
+ const [showConsole, setShowConsole] = useState(true);
 
-  const editorRef = useRef(null);
-  const isRemoteUpdate = useRef(false);
+ const handleLanguageChange = (e) => {
+ const newLang = e.target.value;
+ setLanguage(newLang);
+ setCode(BOILERPLATES[newLang] ||'');
+ setOutput('');
+ setIsError(false);
+ };
 
-  // Sync with Room State & Incoming peer edits
-  useEffect(() => {
-    if (!roomId) return;
+ const handleEditorChange = (value) => {
+ setCode(value);
+ };
 
-    const handleCodeUpdate = (data) => {
-      if (!data) return;
-      isRemoteUpdate.current = true;
-      if (data.code !== undefined) {
-        setCode(data.code);
-      }
-      if (data.language && data.language !== language) {
-        setLanguage(data.language);
-      }
-    };
+ const runCode = async () => {
+ if (!code.trim() || isLoading) return;
 
-    const handleRoomState = (state) => {
-      if (!state) return;
-      isRemoteUpdate.current = true;
-      if (state.code) {
-        setCode(state.code);
-      }
-      if (state.language) {
-        setLanguage(state.language);
-      }
-    };
+ setIsLoading(true);
+ setShowConsole(true);
+ setOutput('Executing code on server...');
+ setIsError(false);
 
-    socketService.on('code_update', handleCodeUpdate);
-    socketService.on('room_state', handleRoomState);
+ try {
+ const response = await fetch(`${API_URL}/execute`, {
+ method:'POST',
+ headers: {'Content-Type':'application/json',
+ },
+ body: JSON.stringify({
+ language: language,
+ code: code
+ })
+ });
 
-    return () => {
-      socketService.off('code_update', handleCodeUpdate);
-      socketService.off('room_state', handleRoomState);
-    };
-  }, [roomId, language]);
+ const data = await response.json();
 
-  const handleLanguageChange = (e) => {
-    const newLang = e.target.value;
-    setLanguage(newLang);
-    const newBoilerplate = BOILERPLATES[newLang] || '';
-    setCode(newBoilerplate);
-    setOutput('');
-    setIsError(false);
+ if (data.stderr) {
+ setOutput(data.stderr);
+ setIsError(true);
+ } else if (data.stdout) {
+ setOutput(data.stdout);
+ setIsError(false);
+ } else if (data.error) {
+ setOutput(data.error);
+ setIsError(true);
+ } else {
+ setOutput('✓ Execution finished with no output.');
+ setIsError(false);
+ }
+ } catch (error) {
+ setOutput('Failed to execute code:' + error.message);
+ setIsError(true);
+ } finally {
+ setIsLoading(false);
+ }
+ };
 
-    if (roomId) {
-      socketService.emit('code_change', {
-        roomId,
-        code_diff: newBoilerplate,
-        language: newLang
-      });
-    }
-  };
+ const clearOutput = () => {
+ setOutput('');
+ setIsError(false);
+ };
 
-  const handleEditorChange = (value) => {
-    if (isRemoteUpdate.current) {
-      isRemoteUpdate.current = false;
-      return;
-    }
-    setCode(value);
+ return (
+ <div className="flex flex-col h-full w-full rounded-xl overflow-hidden bg-white border border-gray-200 shadow-xl font-sans">
+ {/* Header Bar */}
+ <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-gray-200 shrink-0">
+ <div className="flex items-center gap-3">
+ <div className="flex items-center gap-1.5">
+ <Code2 className="h-4 w-4 text-emerald-400" />
+ <select
+ value={language}
+ onChange={handleLanguageChange}
+ className="bg-gray-100 text-gray-800 text-xs rounded-md px-2.5 py-1.5 border border-gray-200 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm font-medium"
+ >
+ {LANGUAGES.map((lang) => (
+ <option key={lang.value} value={lang.value}>
+ {lang.label}
+ </option>
+ ))}
+ </select>
+ </div>
 
-    if (roomId) {
-      const position = editorRef.current?.getPosition();
-      socketService.emit('code_change', {
-        roomId,
-        code_diff: value,
-        cursorPosition: position,
-        language
-      });
-    }
-  };
+ <button
+ onClick={() => setShowConsole(!showConsole)}
+ className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-md transition-colors ${showConsole ?'bg-gray-200 text-emerald-400 border border-gray-300' :'text-gray-600 hover:text-gray-800'}`}
+ >
+ <Terminal className="h-3.5 w-3.5" />
+ <span className="hidden sm:inline">Console</span>
+ </button>
+ </div>
+ 
+ <div className="flex items-center gap-2">
+ {showConsole && output && (
+ <button
+ onClick={clearOutput}
+ className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md transition-colors"
+ title="Clear Output"
+ >
+ <Trash2 className="h-3.5 w-3.5" />
+ <span className="hidden sm:inline">Clear</span>
+ </button>
+ )}
+ 
+ <button
+ onClick={runCode}
+ disabled={isLoading}
+ className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all shadow-md ${
+ isLoading 
+ ?'bg-emerald-600/50 text-emerald-200 cursor-not-allowed' 
+ :'bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95'
+ }`}
+ >
+ {isLoading ? (
+ <Loader2 className="h-3.5 w-3.5 animate-spin" />
+ ) : (
+ <Play className="h-3.5 w-3.5 fill-current" />
+ )}
+ <span>{isLoading ?'Running...' :'Run Code'}</span>
+ </button>
+ </div>
+ </div>
 
-  const runCode = async () => {
-    if (!code.trim() || isLoading) return;
+ {/* Editor & Output Container */}
+ <div className="grow flex flex-col relative overflow-hidden">
+ {/* Editor Pane */}
+ <div className="grow relative overflow-hidden">
+ <Editor
+ height="100%"
+ language={language}
+ theme="light"
+ value={code}
+ onChange={handleEditorChange}
+ options={{
+ minimap: { enabled: false },
+ fontSize: 13.5,
+ wordWrap:'on',
+ scrollBeyondLastLine: false,
+ automaticLayout: true,
+ fontFamily:"'JetBrains Mono','Fira Code', monospace",
+ padding: { top: 12 }
+ }}
+ />
+ </div>
+
+ {/* Console Output Drawer */}
+ {showConsole && (
+ <div className="h-40 bg-gray-50 border-t border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-bottom duration-150">
+ <div className="px-3 py-1.5 bg-white border-b border-gray-200 flex items-center justify-between">
+ <div className="flex items-center gap-2">
+ <Terminal className="h-3.5 w-3.5 text-gray-600" />
+ <span className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider">Terminal Output</span>
+ </div>
+ <button 
+ onClick={() => setShowConsole(false)} 
+ className="text-gray-600 hover:text-gray-800 text-xs px-1.5 py-0.5 rounded hover:bg-gray-500"
+ >
+ ✕
+ </button>
+ </div>
+ <div className="grow p-3 overflow-y-auto font-mono text-xs">
+ {output ? (
+ <pre className={`whitespace-pre-wrap break-words leading-relaxed ${isError ?'text-red-600' :'text-black'}`}>
+ {output}
+ </pre>
+ ) : (
+ <div className="text-gray-700 italic font-bold">Code output will appear here after clicking'Run Code'...</div>
+ )}
+ </div>
+ </div>
+ )}
+ </div>
+ </div>
+ );
+}
 
     setIsLoading(true);
     setShowConsole(true);

@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import ChatWidget from './chat/ChatWidget';
-import toast from 'react-hot-toast';
+import NotificationsDropdown from './Notifications';
 
 const Navbar = () => {
   const location = useLocation();
@@ -245,7 +245,8 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* Direct Messages Widget */}
+                <NotificationsDropdown />
+                
                 <div className="relative">
                   <button 
                     onClick={() => setIsChatOpen(!isChatOpen)}

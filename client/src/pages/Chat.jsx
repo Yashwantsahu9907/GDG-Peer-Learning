@@ -3,6 +3,9 @@ import { socketService } from '../utils/socket';
 import { useAuth } from '../contexts/AuthContext';
 import { Globe, MessageSquare, Send, Users, User as UserIcon, Sparkles } from 'lucide-react';
 import { SERVER_URL } from '../config';
+import { useMentionAutocomplete } from '../hooks/useMentionAutocomplete';
+import MentionDropdown from '../components/chat/MentionDropdown';
+import MentionText from '../components/chat/MentionText';
 
 const Chat = () => {
  const { user } = useAuth();
@@ -12,6 +15,7 @@ const Chat = () => {
  const [personalMessages, setPersonalMessages] = useState([]);
  const [selectedContact, setSelectedContact] = useState(null);
  const [inputMessage, setInputMessage] = useState('');
+ const [allUsers, setAllUsers] = useState([]);
 
  const messagesEndRef = useRef(null);
  const currentUserId = user?._id || user?.userId || user?.id ||'guest';
@@ -102,31 +106,65 @@ const Chat = () => {
  }
  }, [activeTab, selectedContact, currentUserId, serverUrl]);
 
- useEffect(() => {
- messagesEndRef.current?.scrollIntoView({ behavior:'smooth' });
- }, [globalMessages, personalMessages, activeTab]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [globalMessages, personalMessages, activeTab]);
 
- const handleSendMessage = (e) => {
- e.preventDefault();
- if (!inputMessage.trim()) return;
+  useEffect(() => {
+    fetch(`${serverUrl}/api/users`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setAllUsers(data.users);
+        }
+      })
+      .catch(err => console.error('Users fetch error:', err));
+  }, [serverUrl]);
 
- if (activeTab ==='global') {
- socketService.emit('send_global_message', {
- senderId: currentUserId,
- senderName: currentUserName,
- text: inputMessage.trim()
- });
- } else if (activeTab ==='personal' && selectedContact) {
- socketService.emit('send_personal_message', {
- senderId: currentUserId,
- senderName: currentUserName,
- receiverId: selectedContact.userId,
- text: inputMessage.trim()
- });
- }
+  const handleSelectMention = (newText) => {
+    setInputMessage(newText);
+  };
 
- setInputMessage('');
- };
+  const {
+    isMentionActive,
+    filteredMembers,
+    selectedIndex,
+    setSelectedIndex,
+    handleKeyDown: handleMentionKeyDown,
+    insertMention
+  } = useMentionAutocomplete(inputMessage, allUsers, handleSelectMention);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
+
+    let messageMentions = [];
+    if (activeTab === 'global') {
+      allUsers.forEach(u => {
+        if (inputMessage.includes(`@${u.name}`)) {
+          messageMentions.push({ userId: u._id, name: u.name });
+        }
+      });
+    }
+
+    if (activeTab === 'global') {
+      socketService.emit('send_global_message', {
+        senderId: currentUserId,
+        senderName: currentUserName,
+        text: inputMessage.trim(),
+        mentions: messageMentions
+      });
+    } else if (activeTab === 'personal' && selectedContact) {
+      socketService.emit('send_personal_message', {
+        senderId: currentUserId,
+        senderName: currentUserName,
+        receiverId: selectedContact.userId,
+        text: inputMessage.trim()
+      });
+    }
+
+    setInputMessage('');
+  };
 
  const formatTime = (isoString) => {
  if (!isoString) return'';
@@ -174,15 +212,44 @@ const Chat = () => {
               contacts.map((contact, idx) => (
                 <button
                   key={idx}
-                  onClick={() => { setSelectedContact(contact); setActiveTab('personal'); }}
+                  onClick={() => { 
+                    setSelectedContact(contact); 
+                    setActiveTab('personal');
+                    if (contact.unreadCount > 0) {
+                      setContacts(prev => prev.map(c => c.userId === contact.userId ? { ...c, unreadCount: 0 } : c));
+                      fetch(`${serverUrl}/api/notifications/sender/${contact.userId}/read`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        credentials: 'include'
+                      }).then(() => {
+                        window.dispatchEvent(new CustomEvent('notifications:refresh'));
+                      }).catch(err => console.error(err));
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors ${selectedContact?.userId === contact.userId && activeTab === 'personal' ? 'bg-zinc-200/80 border border-zinc-300 text-black font-bold' : 'hover:bg-white text-zinc-600'}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-black text-white font-bold flex items-center justify-center text-xs shrink-0">
                     {contact.name ? contact.name[0].toUpperCase() : <UserIcon className="w-4 h-4" />}
                   </div>
-                  <div className="flex-1 truncate">
-                    <div className="font-bold text-xs text-zinc-900 truncate">{contact.name}</div>
-                    <div className="text-[11px] text-zinc-500 truncate">{contact.lastMessage}</div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="font-bold text-xs text-zinc-900 truncate">{contact.name}</span>
+                      <span className="text-[9px] text-zinc-400 shrink-0">{formatTime(contact.timestamp)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[11px] text-zinc-500 truncate flex-1 pr-2">
+                        {contact.lastMessageIsMine && <span className="font-semibold text-zinc-900 opacity-75">You: </span>}
+                        {contact.lastMessage}
+                      </p>
+                      {contact.unreadCount > 0 && (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm">
+                          {contact.unreadCount}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))
@@ -227,7 +294,7 @@ const Chat = () => {
                         <span className="text-[10px] text-zinc-400">{formatTime(msg.timestamp)}</span>
                       </div>
                       <div className={`px-4 py-2.5 rounded-2xl max-w-lg text-sm leading-relaxed shadow-xs break-words ${isSelf ? 'bg-black text-white rounded-tr-none' : 'bg-zinc-100 border border-zinc-200 text-zinc-900 rounded-tl-none'}`}>
-                        {msg.text}
+                        <MentionText text={msg.text} mentions={msg.mentions} />
                       </div>
                     </div>
                   );
@@ -238,7 +305,7 @@ const Chat = () => {
                 <div className="flex flex-col items-center justify-center h-full text-center py-20 text-zinc-400">
                   <Sparkles className="h-12 w-12 text-zinc-300 mb-2" />
                   <p className="font-semibold text-sm text-zinc-700">Say hello to {selectedContact?.name}</p>
-                  <p className="text-xs mt-1">Direct messages between you and this peer are synced in real time.</p>
+                  <p className="text-xs mt-1">Start your 1-on-1 conversation now.</p>
                 </div>
               ) : (
                 currentPersonalMsgs.map((msg, idx) => {
@@ -247,7 +314,7 @@ const Chat = () => {
                     <div key={msg._id || idx} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
                       <span className="text-[10px] text-zinc-400 mx-1 mb-1">{formatTime(msg.timestamp)}</span>
                       <div className={`px-4 py-2.5 rounded-2xl max-w-lg text-sm leading-relaxed shadow-xs break-words ${isSelf ? 'bg-black text-white rounded-tr-none' : 'bg-zinc-100 border border-zinc-200 text-zinc-900 rounded-tl-none'}`}>
-                        {msg.text}
+                        <MentionText text={msg.text} mentions={msg.mentions} />
                       </div>
                     </div>
                   );
@@ -258,14 +325,25 @@ const Chat = () => {
           </div>
 
           {/* Input Form */}
-          <form onSubmit={handleSendMessage} className="p-4 border-t border-zinc-200 bg-zinc-50/50">
-            <div className="flex items-center gap-3">
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-zinc-200 bg-zinc-50/50 relative">
+            
+            {activeTab === 'global' && isMentionActive && (
+              <MentionDropdown 
+                members={filteredMembers}
+                selectedIndex={selectedIndex}
+                onSelect={insertMention}
+              />
+            )}
+
+            <div className="flex items-center gap-3 relative">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={activeTab === 'global' ? "Message the global community..." : `Message ${selectedContact?.name || 'peer'}...`}
+                onKeyDown={handleMentionKeyDown}
+                placeholder={activeTab === 'global' ? "Message the global community... (Type @ to mention)" : `Message ${selectedContact?.name || 'peer'}...`}
                 className="flex-1 bg-white border border-zinc-300 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-black transition-colors"
+                autoComplete="off"
               />
               <button
                 type="submit"
