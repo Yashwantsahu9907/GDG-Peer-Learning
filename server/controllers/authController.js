@@ -6,12 +6,12 @@ const generateToken = (res, userId, role) => {
     expiresIn: '30d',
   });
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  
+  const isProd = process.env.NODE_ENV === 'production';
+
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax', // Use 'none' for cross-origin, 'lax' for local dev
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 };
@@ -168,12 +168,12 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('jwt', '', {
     httpOnly: true,
     expires: new Date(0),
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
   });
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };

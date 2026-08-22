@@ -1,19 +1,20 @@
-import React, { useState } from'react';
-import Editor from'@monaco-editor/react';
-import { Play, Trash2, Loader2, Terminal, Code2, Sparkles } from'lucide-react';
+import React, { useState } from 'react';
+import Editor from '@monaco-editor/react';
+import { Play, Trash2, Loader2, Terminal, Code2, Sparkles } from 'lucide-react';
+import { API_URL } from '../config';
 
 const BOILERPLATES = {
- javascript:'// JavaScript Workspace\nfunction solve(input) {\n console.log("Processing input:", input);\n return input * 2;\n}\n\nconsole.log("Result:", solve(42));\n',
- python:'# Python 3 Workspace\ndef solve(x):\n print(f"Running calculation for {x}")\n return x ** 2\n\nprint("Result:", solve(8))\n',
- cpp:'// C++ Workspace\n#include <iostream>\n\nint main() {\n std::cout <<"Hello from GDG Peer Collaboration Room!" << std::endl;\n return 0;\n}\n',
+ javascript:' console.log("Hello world");\n',
+ python:'print("Hello world")\n',
+ cpp:'#include <iostream>\n using namespace std;\nint main() {\n cout <<"Hello World" << endl;\n return 0;\n}\n',
  java:'// Java Workspace\npublic class Main {\n public static void main(String[] args) {\n System.out.println("Hello from GDG Peer Java Runner!");\n }\n}\n'
 };
 
 const LANGUAGES = [
- { value:'javascript', label:'JavaScript (Node.js)' },
- { value:'python', label:'Python 3' },
- { value:'cpp', label:'C++ (GCC)' },
- { value:'java', label:'Java (OpenJDK)' }
+ { value:'javascript', label:'JavaScript' },
+ { value:'python', label:'Python ' },
+ { value:'cpp', label:'C++ ' },
+ { value:'java', label:'Java' }
 ];
 
 export default function CodeEditor() {
@@ -45,8 +46,7 @@ export default function CodeEditor() {
  setIsError(false);
 
  try {
- const apiUrl = import.meta.env.VITE_SERVER_URL ||'http://localhost:5000';
- const response = await fetch(`${apiUrl}/api/execute`, {
+ const response = await fetch(`${API_URL}/execute`, {
  method:'POST',
  headers: {'Content-Type':'application/json',
  },
@@ -183,7 +183,7 @@ export default function CodeEditor() {
  </div>
  <div className="flex-grow p-3 overflow-y-auto font-mono text-xs">
  {output ? (
- <pre className={`whitespace-pre-wrap break-words leading-relaxed ${isError ?'text-red-600' :'text-emerald-400'}`}>
+ <pre className={`whitespace-pre-wrap break-words leading-relaxed ${isError ?'text-red-600' :'text-black'}`}>
  {output}
  </pre>
  ) : (

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { socketService } from '../utils/socket';
 import { useAuth } from './AuthContext';
+import { API_URL } from '../config';
 
 const NotificationContext = createContext();
 
@@ -18,7 +19,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`, {
+      const res = await fetch(`${API_URL}/notifications`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -36,7 +37,7 @@ export const NotificationProvider = ({ children }) => {
     if (!user) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications/unread-count`, {
+      const res = await fetch(`${API_URL}/notifications/unread-count`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -55,7 +56,7 @@ export const NotificationProvider = ({ children }) => {
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
 
-      await fetch(`${import.meta.env.VITE_API_URL}/notifications/${id}/read`, {
+      await fetch(`${API_URL}/notifications/${id}/read`, {
         method: 'PATCH',
         credentials: 'include'
       });
@@ -71,7 +72,7 @@ export const NotificationProvider = ({ children }) => {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
 
-      await fetch(`${import.meta.env.VITE_API_URL}/notifications/read-all`, {
+      await fetch(`${API_URL}/notifications/read-all`, {
         method: 'PATCH',
         credentials: 'include'
       });
@@ -86,8 +87,7 @@ export const NotificationProvider = ({ children }) => {
       fetchUnreadCount();
       
       // Ensure socket is connected globally for notifications
-      const token = localStorage.getItem('token');
-      socketService.connect(token, user._id);
+      socketService.connect(null, user._id);
       
       socketService.on('notification:new', (notification) => {
         setNotifications(prev => [notification, ...prev]);
@@ -102,15 +102,6 @@ export const NotificationProvider = ({ children }) => {
       socketService.off('notification:new');
     };
   }, [user, fetchNotifications, fetchUnreadCount]);
-
-  useEffect(() => {
-    const handleRefresh = () => {
-      fetchNotifications();
-      fetchUnreadCount();
-    };
-    window.addEventListener('notifications:refresh', handleRefresh);
-    return () => window.removeEventListener('notifications:refresh', handleRefresh);
-  }, [fetchNotifications, fetchUnreadCount]);
 
   return (
     <NotificationContext.Provider value={{

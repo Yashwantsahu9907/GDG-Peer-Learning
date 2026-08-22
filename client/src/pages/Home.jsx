@@ -2,6 +2,7 @@ import React, { useEffect } from'react';
 import { io } from'socket.io-client';
 import { Users, BookOpenCheck, Zap } from'lucide-react';
 import { getStoredUser, setStoredUser } from'../utils/userClient';
+import { API_URL, SERVER_URL } from '../config';
 
 const Home = () => {
  useEffect(() => {
@@ -11,7 +12,7 @@ const Home = () => {
  return storedUser;
  }
 
- const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users`, {
+ const response = await fetch(`${API_URL}/users`, {
  method:'POST',
  headers: {'Content-Type':'application/json'
  },
@@ -26,10 +27,11 @@ const Home = () => {
 
  const setupSocket = async () => {
  const user = await initializeUser();
-      const socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:5000', {
+ const socket = io(SERVER_URL, {
  auth: {
  userId: user.userId
- }
+ },
+ transports: ['polling', 'websocket']
  });
 
  socket.on('connect', () => {

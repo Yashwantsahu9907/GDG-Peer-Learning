@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config';
 import { 
   MapPin, Link as LinkIcon,
   Users, Video, BookOpen, Star, Trophy, Clock,
@@ -159,7 +160,7 @@ const Profile = () => {
 
   const handleSaveBio = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, {
+      const res = await fetch(`${API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

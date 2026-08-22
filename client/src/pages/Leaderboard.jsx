@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, CalendarDays, ExternalLink, Flame } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config';
 
 const Leaderboard = () => {
   const [topMentors, setTopMentors] = useState([]);
@@ -9,7 +10,7 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/leaderboard`);
+        const res = await fetch(`${API_URL}/leaderboard`);
         const data = await res.json();
         if (data.success) {
           const formatted = data.leaderboard.map((m, i) => ({
