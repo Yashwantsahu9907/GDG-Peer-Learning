@@ -33,6 +33,10 @@ const messageSchema = new mongoose.Schema({
     senderName: { type: String },
     text: { type: String }
   },
+  mentions: [{
+    userId: { type: String, required: true },
+    name: { type: String, required: true }
+  }],
   timestamp: {
     type: Date,
     default: Date.now

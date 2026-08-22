@@ -40,7 +40,8 @@ const Notifications = () => {
     }
     setIsOpen(false);
     if (notification.link) {
-      navigate(notification.link);
+      const targetLink = notification.link.startsWith('/chat/') ? '/chat' : notification.link;
+      navigate(targetLink);
     }
   };
 
@@ -48,22 +49,22 @@ const Notifications = () => {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-md transition-colors relative"
+        className="p-2 text-zinc-600 hover:text-black hover:bg-zinc-100 rounded-full transition-colors relative"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]"></span>
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-black border-2 border-white"></span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-            <h4 className="text-sm font-bold text-[var(--color-text-primary)]">Notifications</h4>
+        <div className="absolute right-0 mt-3 w-80 bg-white border border-zinc-200 rounded-2xl shadow-2xl overflow-hidden z-50 transform origin-top-right transition-all text-zinc-900">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-zinc-50/50">
+            <h4 className="text-sm font-bold text-zinc-900">Notifications</h4>
             {unreadCount > 0 && (
               <button 
                 onClick={markAllAsRead}
-                className="text-xs font-medium text-[var(--color-accent)] hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-black hover:underline flex items-center gap-1"
               >
                 <Check className="h-3 w-3" />
                 Mark all as read
@@ -71,22 +72,23 @@ const Notifications = () => {
             )}
           </div>
           
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto custom-scrollbar">
             {loading && notifications.length === 0 ? (
-              <div className="p-4 text-center text-sm text-[var(--color-text-muted)]">Loading...</div>
+              <div className="p-4 text-center text-sm text-zinc-500">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-sm text-[var(--color-text-muted)]">
+              <div className="p-8 text-center text-sm text-zinc-500">
+                <Bell className="h-8 w-8 mx-auto text-zinc-300 mb-2" />
                 No notifications yet
               </div>
             ) : (
-              <ul className="divide-y divide-[var(--color-border)]">
+              <ul className="divide-y divide-zinc-100">
                 {notifications.map(notif => (
                   <li 
                     key={notif._id} 
                     onClick={() => handleNotificationClick(notif)}
-                    className={`p-4 cursor-pointer hover:bg-[var(--color-bg-secondary)] transition-colors flex gap-3 ${!notif.isRead ? 'bg-[var(--color-bg-secondary)]' : ''}`}
+                    className={`p-4 cursor-pointer hover:bg-zinc-50 transition-colors flex gap-3 ${!notif.isRead ? 'bg-zinc-50/50' : ''}`}
                   >
-                    <div className="flex-shrink-0 h-10 w-10 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full flex items-center justify-center text-[var(--color-text-secondary)] font-bold overflow-hidden">
+                    <div className="flex-shrink-0 h-10 w-10 bg-black text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden">
                       {notif.sender?.avatar ? (
                         <img src={notif.sender.avatar} alt={notif.sender.name} className="h-full w-full object-cover" />
                       ) : (
@@ -94,16 +96,16 @@ const Notifications = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[var(--color-text-primary)]">
-                        <span className="font-bold">{notif.sender?.name}</span> {notif.message}
+                      <p className="text-sm text-zinc-800 leading-tight">
+                        <span className="font-bold text-black">{notif.sender?.name}</span> {notif.message}
                       </p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                      <p className="text-xs text-zinc-500 mt-1 font-medium">
                         {formatTimeAgo(notif.createdAt)}
                       </p>
                     </div>
                     {!notif.isRead && (
                       <div className="flex-shrink-0 flex items-center">
-                        <div className="h-2 w-2 bg-[var(--color-accent)] rounded-full"></div>
+                        <div className="h-2 w-2 bg-black rounded-full shadow-sm"></div>
                       </div>
                     )}
                   </li>
@@ -113,10 +115,10 @@ const Notifications = () => {
           </div>
           
           {notifications.length > 0 && (
-            <div className="p-2 border-t border-[var(--color-border)] bg-[var(--color-bg-primary)]">
+            <div className="p-2 border-t border-zinc-100 bg-zinc-50/50">
               <button 
                 onClick={() => { setIsOpen(false); navigate('/notifications'); }}
-                className="w-full text-center text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] py-1"
+                className="w-full text-center text-xs font-bold text-zinc-500 hover:text-black py-2 rounded-xl hover:bg-zinc-100 transition-colors"
               >
                 View all notifications &rarr;
               </button>

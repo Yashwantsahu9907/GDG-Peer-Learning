@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from'react';
-import { Search, Filter, Star, Clock, Video, Grid, List, X } from'lucide-react';
-import { useNavigate } from'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Filter, Star, Clock, Video, Grid, List, X, UserPlus, UserCheck, Heart, User, Sparkles, MessageSquare } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
-// Mock Data
-const mentors = [
- { id: 1, name:'Alice Chen', role:'Senior CS Student', skills: ['React','Node.js','System Design'], rating: 4.9, match: 95, availability: ['Today 2-4PM','Tomorrow 10AM-12PM'], avatar:'AC' },
- { id: 2, name:'David Kumar', role:'GDG Lead', skills: ['Python','Machine Learning','Data Structures'], rating: 4.8, match: 88, availability: ['Wed 3-5PM'], avatar:'DK' },
- { id: 3, name:'Sarah Jones', role:'Frontend Specialist', skills: ['Vue','Tailwind CSS','Figma'], rating: 4.7, match: 82, availability: ['Thu 1-3PM','Fri 10AM-12PM'], avatar:'SJ' },
- { id: 4, name:'Michael Lee', role:'Backend Dev', skills: ['Go','Docker','Kubernetes'], rating: 4.9, match: 91, availability: ['Mon 9-11AM'], avatar:'ML' },
+const DEFAULT_MENTORS = [
+  { _id: 'm1', name: 'Alice Chen', role: 'Senior CS Student', branch: 'CSE', skills: ['React', 'Node.js', 'System Design'], rating: 4.9, match: 95, availability: ['Today 2-4PM', 'Tomorrow 10AM-12PM'], isFollowing: false, isFriend: false },
+  { _id: 'm2', name: 'David Kumar', role: 'GDG Lead', branch: 'AI/ML', skills: ['Python', 'Machine Learning', 'Data Structures'], rating: 4.8, match: 88, availability: ['Wed 3-5PM'], isFollowing: false, isFriend: false },
+  { _id: 'm3', name: 'Sarah Jones', role: 'Frontend Specialist', branch: 'IT', skills: ['Vue', 'Tailwind CSS', 'Figma'], rating: 4.7, match: 82, availability: ['Thu 1-3PM', 'Fri 10AM-12PM'], isFollowing: false, isFriend: false },
+  { _id: 'm4', name: 'Michael Lee', role: 'Backend Dev', branch: 'CSE', skills: ['Go', 'Docker', 'Kubernetes'], rating: 4.9, match: 91, availability: ['Mon 9-11AM'], isFollowing: false, isFriend: false },
 ];
 
 const Discover = () => {
@@ -56,7 +58,7 @@ const Discover = () => {
 
  {/* Filters & Search */}
  <div className="gfg-panel p-4 flex flex-col md:flex-row gap-4">
- <div className="relative flex-grow">
+ <div className="relative grow">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
  <input 
  type="text" 
@@ -95,7 +97,7 @@ const Discover = () => {
  </div>
  </div>
 
- <div className={`flex flex-col flex-grow ${view ==='grid' ?'' :'w-2/3'}`}>
+ <div className={`flex flex-col grow ${view ==='grid' ?'' :'w-2/3'}`}>
  <div className="mb-4">
  <div className="text-xs text-[var(--color-text-muted)] mb-2 uppercase tracking-wide font-bold">Skills Taught</div>
  <div className="flex flex-wrap gap-2">

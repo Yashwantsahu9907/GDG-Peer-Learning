@@ -39,9 +39,12 @@ function App() {
               <Route path="signup" element={<Register />} />
               
               <Route element={<ProtectedRoute />}>
-                <Route path="session/:id" element={<Session />} />
+                <Route path="session/:id" element={<Meeting />} />
                 <Route path="meeting" element={<Meeting />} />
+                <Route path="meeting/:id" element={<Meeting />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="profile/:userId" element={<Profile />} />
+                <Route path="user/:userId" element={<Profile />} />
                 <Route path="points" element={<Points />} />
               </Route>
 
