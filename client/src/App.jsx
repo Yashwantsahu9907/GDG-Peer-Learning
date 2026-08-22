@@ -1,21 +1,21 @@
-import React from'react';
-import { BrowserRouter, Routes, Route } from'react-router-dom';
-import Layout from'./components/Layout';
-import Landing from'./pages/Landing';
-import Discover from'./pages/Discover';
-import Bounties from'./pages/Bounties';
-import Leaderboard from'./pages/Leaderboard';
-import Meeting from'./pages/Meeting';
-import Login from'./pages/Login';
-import Register from'./pages/Register';
-import Profile from'./pages/Profile';
-import Points from'./pages/Points';
-import { AuthProvider } from'./contexts/AuthContext';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/Layout';
+import Landing from './pages/Landing';
+import Discover from './pages/Discover';
+import Bounties from './pages/Bounties';
+import Leaderboard from './pages/Leaderboard';
+import Meeting from './pages/Meeting';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import Points from './pages/Points';
+import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import ProtectedRoute from'./components/ProtectedRoute';
-import { Toaster } from'react-hot-toast';
-import Session from'./pages/Session';
-import Chat from'./pages/Chat';
+import ProtectedRoute from './components/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
+import Session from './pages/Session';
+import Chat from './pages/Chat';
 
 import { NotificationProvider } from './contexts/NotificationContext';
 
@@ -29,12 +29,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Landing />} />
+              <Route path="home" element={<Navigate to="/" replace />} />
               <Route path="discover" element={<Discover />} />
               <Route path="bounties" element={<Bounties />} />
               <Route path="leaderboard" element={<Leaderboard />} />
               <Route path="chat" element={<Chat />} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
+              <Route path="signup" element={<Register />} />
               
               <Route element={<ProtectedRoute />}>
                 <Route path="session/:id" element={<Meeting />} />
@@ -45,9 +47,12 @@ function App() {
                 <Route path="user/:userId" element={<Profile />} />
                 <Route path="points" element={<Points />} />
               </Route>
+
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
         </BrowserRouter>
+
         </NotificationProvider>
       </ThemeProvider>
     </AuthProvider>

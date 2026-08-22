@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -8,6 +11,9 @@ import connectDB from './config/db.js';
 import User from './models/User.js';
 import authRoutes from './routes/authRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import notificationRoutes from './routes/notificationRoutes.js';
 import { createNotification } from './services/notificationService.js';
@@ -535,7 +541,28 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Server is running' });
 });
 
+// Serve static frontend assets and handle SPA client-side routing fallback
+const clientDistPath = path.resolve(__dirname, '../client/dist');
+const clientDistPathAlt = path.resolve(__dirname, './client/dist');
+
+const distPath = fs.existsSync(clientDistPath)
+  ? clientDistPath
+  : fs.existsSync(clientDistPathAlt)
+  ? clientDistPathAlt
+  : null;
+
+if (distPath) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 5000;
+
 
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
