@@ -255,27 +255,35 @@ const FAQ = () => {
 };
 
 const FinalCTA = () => (
- <section id="connect" className="w-full max-w-6xl mx-auto px-4 py-20">
- <div className="bg-[var(--color-accent)] rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden">
- <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
- <div className="absolute bottom-0 left-0 w-96 h-96 bg-black opacity-20 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2"></div>
- 
- <div className="relative z-10">
- <h2 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">Build Your Network.<br/>Share Your Skills.<br/>Grow Together.</h2>
- <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
- Your next mentor, collaborator, or learning partner is already in the community.
- </p>
- <div className="flex flex-col sm:flex-row justify-center gap-4">
- <Link to="/login" className="px-8 py-4 rounded-xl bg-white text-[var(--color-accent)] font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
- Find Your Peers &rarr;
- </Link>
- <Link to="/discover" className="px-8 py-4 rounded-xl bg-transparent border-2 border-white/30 hover:bg-white/10 font-bold transition-all">
- Explore Workspace
- </Link>
- </div>
- </div>
- </div>
- </section>
+  <section id="connect" className="w-full max-w-6xl mx-auto px-4 py-20">
+    <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-2xl">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-zinc-800/40 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
+      
+      <div className="relative z-10">
+        <h2 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight text-white">
+          Build Your Network.<br />Share Your Skills.<br />Grow Together.
+        </h2>
+        <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10">
+          Your next mentor, collaborator, or learning partner is already in the community.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Link 
+            to="/login" 
+            className="px-8 py-4 rounded-xl bg-white text-zinc-950 font-bold shadow-lg hover:bg-zinc-100 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
+            Find Your Peers &rarr;
+          </Link>
+          <Link 
+            to="/discover" 
+            className="px-8 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white hover:bg-zinc-800 hover:border-zinc-500 font-bold transition-all shadow-sm"
+          >
+            Explore Workspace
+          </Link>
+        </div>
+      </div>
+    </div>
+  </section>
 );
 
 const Footer = () => (

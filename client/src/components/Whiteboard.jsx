@@ -47,74 +47,88 @@ const Whiteboard = ({ roomId ='default-room' }) => {
  return () => ro.disconnect();
  }, []);
 
- // Remote drawing event listener
- useEffect(() => {
- const canvas = canvasRef.current;
- if (!canvas) return;
+  // Remote drawing event listener
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
- const handleRemoteDraw = ({ drawData }) => {
- if (!drawData) return;
- const ctx = canvas.getContext('2d');
- const rect = canvas.getBoundingClientRect();
- const { type, from, to, color: strokeColor, size: strokeSize, tool: strokeTool, text } = drawData;
+    const renderDrawItem = (drawData) => {
+      if (!drawData) return;
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      const { type, from, to, color: strokeColor, size: strokeSize, tool: strokeTool, text } = drawData;
 
- const scaleX = rect.width;
- const scaleY = rect.height;
+      const scaleX = rect.width;
+      const scaleY = rect.height;
 
- const fromX = from.x * scaleX;
- const fromY = from.y * scaleY;
- const toX = to ? to.x * scaleX : fromX;
- const toY = to ? to.y * scaleY : fromY;
+      const fromX = from.x * scaleX;
+      const fromY = from.y * scaleY;
+      const toX = to ? to.x * scaleX : fromX;
+      const toY = to ? to.y * scaleY : fromY;
 
- if (type ==='stroke') {
- if (strokeTool ==='eraser') {
- ctx.globalCompositeOperation ='destination-out';
- ctx.lineWidth = strokeSize * 5;
- } else {
- ctx.globalCompositeOperation ='source-over';
- ctx.strokeStyle = strokeColor;
- ctx.lineWidth = strokeSize;
- }
- ctx.beginPath();
- ctx.moveTo(fromX, fromY);
- ctx.lineTo(toX, toY);
- ctx.stroke();
- } else if (type ==='shape') {
- ctx.globalCompositeOperation ='source-over';
- ctx.strokeStyle = strokeColor;
- ctx.lineWidth = strokeSize;
- ctx.beginPath();
+      if (type === 'stroke') {
+        if (strokeTool === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.lineWidth = strokeSize * 5;
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = strokeSize;
+        }
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+      } else if (type === 'shape') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeSize;
+        ctx.beginPath();
 
- if (strokeTool ==='line') {
- ctx.moveTo(fromX, fromY);
- ctx.lineTo(toX, toY);
- } else if (strokeTool ==='rect') {
- ctx.strokeRect(fromX, fromY, toX - fromX, toY - fromY);
- } else if (strokeTool ==='circle') {
- const radius = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
- ctx.arc(fromX, fromY, radius, 0, 2 * Math.PI);
- } else if (strokeTool ==='text' && text) {
- ctx.fillStyle = strokeColor;
- ctx.font =`${strokeSize * 4 + 10}px sans-serif`;
- ctx.fillText(text, fromX, fromY);
- }
- ctx.stroke();
- }
- };
+        if (strokeTool === 'line') {
+          ctx.moveTo(fromX, fromY);
+          ctx.lineTo(toX, toY);
+        } else if (strokeTool === 'rect') {
+          ctx.strokeRect(fromX, fromY, toX - fromX, toY - fromY);
+        } else if (strokeTool === 'circle') {
+          const radius = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+          ctx.arc(fromX, fromY, radius, 0, 2 * Math.PI);
+        } else if (strokeTool === 'text' && text) {
+          ctx.fillStyle = strokeColor;
+          ctx.font = `${strokeSize * 4 + 10}px sans-serif`;
+          ctx.fillText(text, fromX, fromY);
+        }
+        ctx.stroke();
+      }
+    };
 
- const handleRemoteClear = () => {
- const ctx = canvas.getContext('2d');
- ctx.clearRect(0, 0, canvas.width, canvas.height);
- };
+    const handleRemoteDraw = ({ drawData }) => {
+      renderDrawItem(drawData);
+    };
 
- socketService.on('whiteboard_draw', handleRemoteDraw);
- socketService.on('whiteboard_clear', handleRemoteClear);
+    const handleRemoteClear = () => {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
 
- return () => {
- socketService.off('whiteboard_draw', handleRemoteDraw);
- socketService.off('whiteboard_clear', handleRemoteClear);
- };
- }, []);
+    const handleRoomState = (state) => {
+      if (state && Array.isArray(state.drawHistory)) {
+        setTimeout(() => {
+          state.drawHistory.forEach(item => renderDrawItem(item));
+        }, 100);
+      }
+    };
+
+    socketService.on('whiteboard_draw', handleRemoteDraw);
+    socketService.on('whiteboard_clear', handleRemoteClear);
+    socketService.on('room_state', handleRoomState);
+
+    return () => {
+      socketService.off('whiteboard_draw', handleRemoteDraw);
+      socketService.off('whiteboard_clear', handleRemoteClear);
+      socketService.off('room_state', handleRoomState);
+    };
+  }, []);
 
  // Local drawing handlers
  useEffect(() => {
