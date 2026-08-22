@@ -8,4 +8,8 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+    host: true, // Listen on all local IP addresses so other devices on Wi-Fi can connect
+    port: 5173
+  }
 })

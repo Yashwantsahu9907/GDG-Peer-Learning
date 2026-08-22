@@ -1,7 +1,18 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Video, VideoOff, Mic, MicOff, Maximize2, Users, ShieldCheck, Monitor } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, Monitor, Users, ShieldCheck, UserCheck, PhoneOff, Sparkles, Volume2 } from 'lucide-react';
 import { getStoredUser } from '../utils/userClient';
 import { socketService } from '../utils/socket';
+import toast from 'react-hot-toast';
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ]
+};
 
 // Sub-component for each Remote Peer's live video stream
 const RemoteVideoTile = ({ peerId, userInfo, stream }) => {
@@ -10,6 +21,9 @@ const RemoteVideoTile = ({ peerId, userInfo, stream }) => {
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(err => {
+        console.warn('[WebRTC] Auto-play was prevented by browser, click anywhere to enable audio/video:', err);
+      });
     }
   }, [stream]);
 
@@ -37,7 +51,7 @@ const RemoteVideoTile = ({ peerId, userInfo, stream }) => {
       {/* Peer Label */}
       <div className="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[11px] font-medium text-white shadow">
         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="truncate max-w-27.5">{userInfo?.name || 'Peer'}</span>
+        <span className="truncate max-w-[120px]">{userInfo?.name || 'Peer'}</span>
       </div>
     </div>
   );
@@ -51,12 +65,93 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
 
   // WebRTC mesh tracking
   const peerConnections = useRef(new Map()); // peerSocketId -> RTCPeerConnection
+  const candidateQueues = useRef(new Map()); // peerSocketId -> Array of RTCIceCandidate
   const [remotePeers, setRemotePeers] = useState([]); // Array of { peerId, userInfo, stream }
 
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Helper to flush queued ICE candidates once remote description is set
+  const processQueuedCandidates = async (peerId, pc) => {
+    if (candidateQueues.current.has(peerId)) {
+      const candidates = candidateQueues.current.get(peerId) || [];
+      for (const candidate of candidates) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.warn('[WebRTC] Error adding queued ICE candidate:', e);
+        }
+      }
+      candidateQueues.current.delete(peerId);
+    }
+  };
+
+  // Helper to create and configure RTCPeerConnection for a remote peer
+  const createPeerConnection = useCallback((targetPeerId, targetUserInfo) => {
+    if (peerConnections.current.has(targetPeerId)) {
+      return peerConnections.current.get(targetPeerId);
+    }
+
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    peerConnections.current.set(targetPeerId, pc);
+
+    // Add local stream tracks to this peer connection if stream is already available
+    const currentStream = screenStreamRef.current || localStreamRef.current;
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => {
+        try {
+          pc.addTrack(track, currentStream);
+        } catch (e) {
+          console.warn('[WebRTC] Error adding track:', e);
+        }
+      });
+    }
+
+    // ICE Candidates
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketService.emit('webrtc_ice_candidate', {
+          roomId,
+          target: targetPeerId,
+          candidate: event.candidate
+        });
+      }
+    };
+
+    // Remote Track Received
+    pc.ontrack = (event) => {
+      const incomingStream = event.streams[0];
+      if (incomingStream) {
+        setRemotePeers(prev => {
+          const existingIdx = prev.findIndex(p => p.peerId === targetPeerId);
+          if (existingIdx !== -1) {
+            const updated = [...prev];
+            updated[existingIdx] = { 
+              ...updated[existingIdx], 
+              stream: incomingStream, 
+              userInfo: targetUserInfo || updated[existingIdx].userInfo 
+            };
+            return updated;
+          }
+          return [...prev, { peerId: targetPeerId, userInfo: targetUserInfo, stream: incomingStream }];
+        });
+      }
+    };
+
+    // Connection State Change
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        pc.close();
+        peerConnections.current.delete(targetPeerId);
+        candidateQueues.current.delete(targetPeerId);
+        setRemotePeers(prev => prev.filter(p => p.peerId !== targetPeerId));
+      }
+    };
+
+    return pc;
+  }, [roomId]);
 
   // 1. Acquire Local Camera & Microphone Stream
   useEffect(() => {
@@ -77,6 +172,22 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
           localVideoRef.current.srcObject = stream;
         }
         setError(null);
+
+        // Attach local tracks to any already created peer connections
+        peerConnections.current.forEach((pc) => {
+          stream.getTracks().forEach(track => {
+            const senders = pc.getSenders();
+            const alreadyAdded = senders.some(s => s.track && s.track.kind === track.kind);
+            if (!alreadyAdded) {
+              try {
+                pc.addTrack(track, stream);
+              } catch (e) {
+                console.warn('[WebRTC] Error adding track to existing PC:', e);
+              }
+            }
+          });
+        });
+
       } catch (err) {
         console.warn('[WebRTC] Camera or mic access not granted:', err);
         setError('Camera off or permission denied');
@@ -94,74 +205,23 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
       if (screenStreamRef.current) {
         screenStreamRef.current.getTracks().forEach(t => t.stop());
       }
-      // Close all peer connections
       peerConnections.current.forEach(pc => pc.close());
       peerConnections.current.clear();
+      candidateQueues.current.clear();
     };
   }, []);
 
-  // Helper to create and configure RTCPeerConnection for a remote peer
-  const createPeerConnection = useCallback((targetPeerId, targetUserInfo) => {
-    if (peerConnections.current.has(targetPeerId)) {
-      return peerConnections.current.get(targetPeerId);
-    }
-
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    peerConnections.current.set(targetPeerId, pc);
-
-    // Add local stream tracks to this peer connection
-    const currentStream = screenStreamRef.current || localStreamRef.current;
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => {
-        pc.addTrack(track, currentStream);
-      });
-    }
-
-    // ICE Candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socketService.emit('webrtc_ice_candidate', {
-          roomId,
-          target: targetPeerId,
-          candidate: event.candidate
-        });
-      }
-    };
-
-    // Remote Track Received
-    pc.ontrack = (event) => {
-      const incomingStream = event.streams[0];
-      setRemotePeers(prev => {
-        const existingIdx = prev.findIndex(p => p.peerId === targetPeerId);
-        if (existingIdx !== -1) {
-          const updated = [...prev];
-          updated[existingIdx] = { ...updated[existingIdx], stream: incomingStream, userInfo: targetUserInfo || updated[existingIdx].userInfo };
-          return updated;
-        }
-        return [...prev, { peerId: targetPeerId, userInfo: targetUserInfo, stream: incomingStream }];
-      });
-    };
-
-    // Connection State Change
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-        pc.close();
-        peerConnections.current.delete(targetPeerId);
-        setRemotePeers(prev => prev.filter(p => p.peerId !== targetPeerId));
-      }
-    };
-
-    return pc;
-  }, [roomId]);
-
-  // 2. WebRTC Signaling Listeners
+  // 2. WebRTC Signaling Handlers
   useEffect(() => {
-    // A. Peer Joined -> initiate WebRTC Offer
+    // A. Peer Joined -> initiate WebRTC Offer to the newcomer
     const handlePeerJoined = async ({ peerId, user: peerUser }) => {
-      if (!peerId) return;
+      if (!peerId || peerId === socketService.socket?.id) return;
       try {
         const pc = createPeerConnection(peerId, peerUser);
-        const offer = await pc.createOffer();
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
         await pc.setLocalDescription(offer);
 
         socketService.emit('webrtc_offer', {
@@ -176,9 +236,12 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
 
     // B. Receive WebRTC Offer -> send WebRTC Answer
     const handleOffer = async ({ offer, sender, senderUser }) => {
+      if (!sender || sender === socketService.socket?.id) return;
       try {
         const pc = createPeerConnection(sender, senderUser);
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        await processQueuedCandidates(sender, pc);
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
 
@@ -196,8 +259,9 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
     const handleAnswer = async ({ answer, sender }) => {
       try {
         const pc = peerConnections.current.get(sender);
-        if (pc) {
+        if (pc && answer) {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          await processQueuedCandidates(sender, pc);
         }
       } catch (err) {
         console.error('[WebRTC] Failed to handle answer from peer:', err);
@@ -207,9 +271,16 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
     // D. Receive ICE Candidate
     const handleCandidate = async ({ candidate, sender }) => {
       try {
+        if (!sender || !candidate) return;
         const pc = peerConnections.current.get(sender);
-        if (pc && candidate) {
+        if (pc && pc.remoteDescription && pc.remoteDescription.type) {
           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          // Queue candidate until setRemoteDescription completes
+          if (!candidateQueues.current.has(sender)) {
+            candidateQueues.current.set(sender, []);
+          }
+          candidateQueues.current.get(sender).push(candidate);
         }
       } catch (err) {
         console.warn('[WebRTC] Error adding ICE candidate:', err);
@@ -222,18 +293,8 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
         const pc = peerConnections.current.get(peerId);
         pc.close();
         peerConnections.current.delete(peerId);
+        candidateQueues.current.delete(peerId);
         setRemotePeers(prev => prev.filter(p => p.peerId !== peerId));
-      }
-    };
-
-    // F. Existing Room Users -> connect to them if not connected yet
-    const handleRoomUsers = ({ users }) => {
-      if (Array.isArray(users)) {
-        users.forEach(u => {
-          if (u.peerId && !peerConnections.current.has(u.peerId)) {
-            handlePeerJoined({ peerId: u.peerId, user: u });
-          }
-        });
       }
     };
 
@@ -242,7 +303,6 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
     socketService.on('webrtc_answer', handleAnswer);
     socketService.on('webrtc_ice_candidate', handleCandidate);
     socketService.on('peer_left', handlePeerLeft);
-    socketService.on('room_users', handleRoomUsers);
 
     return () => {
       socketService.off('peer_joined', handlePeerJoined);
@@ -250,7 +310,6 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
       socketService.off('webrtc_answer', handleAnswer);
       socketService.off('webrtc_ice_candidate', handleCandidate);
       socketService.off('peer_left', handlePeerLeft);
-      socketService.off('room_users', handleRoomUsers);
     };
   }, [roomId, createPeerConnection]);
 
@@ -259,7 +318,7 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
     peerConnections.current.forEach(pc => {
       const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
       if (sender && newVideoTrack) {
-        sender.replaceTrack(newVideoTrack).catch(err => console.warn('Track replace error:', err));
+        sender.replaceTrack(newVideoTrack).catch(err => console.warn('[WebRTC] Track replace error:', err));
       }
     });
   };
@@ -337,7 +396,7 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
     <div className="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-2xl font-sans relative group">
       
       {/* 1. Dynamic Video Mesh Grid Viewport */}
-      <div className={`grow w-full p-2.5 gap-2.5 overflow-hidden grid ${
+      <div className={`flex-grow w-full p-2.5 gap-2.5 overflow-hidden grid ${
         totalVideoTiles === 1 
           ? 'grid-cols-1 grid-rows-1' 
           : totalVideoTiles === 2 
@@ -374,7 +433,7 @@ const CameraPanel = ({ roomId = 'default-room', peers = [], occupantCount = 1 })
           </div>
 
           <div className="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 text-[10px] font-medium text-white">
-            <span className="truncate max-w-25">{user?.name || 'You'}</span>
+            <span className="truncate max-w-[100px]">{user?.name || 'You'}</span>
             {isMuted ? <MicOff className="w-3 h-3 text-red-400" /> : <Mic className="w-3 h-3 text-emerald-400" />}
           </div>
         </div>
