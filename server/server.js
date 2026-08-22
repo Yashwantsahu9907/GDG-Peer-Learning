@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import User from './models/User.js';
 import authRoutes from './routes/authRoutes.js';
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
 
 import notificationRoutes from './routes/notificationRoutes.js';
 import { createNotification } from './services/notificationService.js';
@@ -62,6 +63,7 @@ import chatRoutes from './routes/chatRoutes.js';
 app.use('/api/auth', authRoutes);
 app.use('/api/bounties', bountyRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', executeRoutes);
 app.use('/api/notifications', notificationRoutes);
 
