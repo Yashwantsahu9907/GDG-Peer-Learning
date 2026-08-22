@@ -40,7 +40,8 @@ const Notifications = () => {
     }
     setIsOpen(false);
     if (notification.link) {
-      navigate(notification.link);
+      const targetLink = notification.link.startsWith('/chat/') ? '/chat' : notification.link;
+      navigate(targetLink);
     }
   };
 

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Code, Flame, Coins, Search, Menu, User, Bell, LogOut, ChevronDown, Compass, Award, Users, Settings as SettingsIcon, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ChatWidget from './chat/ChatWidget';
-import Notifications from './Notifications';
+import NotificationsDropdown from './Notifications';
 
 const Navbar = () => {
   const location = useLocation();
@@ -106,7 +106,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <Notifications />
+                <NotificationsDropdown />
                 
                 <div className="relative">
                   <button 
