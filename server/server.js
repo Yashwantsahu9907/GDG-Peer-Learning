@@ -578,10 +578,19 @@ app.get('/api/health', (req, res) => {
 
 // Serve static frontend assets and handle SPA client-side routing fallback
 const getDistPath = () => {
-  const clientDistPath = path.resolve(__dirname, '../client/dist');
-  const clientDistPathAlt = path.resolve(__dirname, './client/dist');
-  if (fs.existsSync(clientDistPath)) return clientDistPath;
-  if (fs.existsSync(clientDistPathAlt)) return clientDistPathAlt;
+  const candidatePaths = [
+    path.resolve(__dirname, '../client/dist'),
+    path.resolve(__dirname, './client/dist'),
+    path.resolve(process.cwd(), 'client/dist'),
+    path.resolve(process.cwd(), '../client/dist'),
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(__dirname, './dist')
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html'))) {
+      return p;
+    }
+  }
   return null;
 };
 
@@ -603,7 +612,26 @@ app.get('*', (req, res, next) => {
   if (dist && fs.existsSync(path.join(dist, 'index.html'))) {
     return res.sendFile(path.join(dist, 'index.html'));
   }
-  res.status(404).send('Not Found');
+  res.status(404).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GDG Peer Learning</title>
+  <meta http-equiv="refresh" content="3">
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; display: flex; height: 100vh; align-items: center; justify-content: center; margin: 0; text-align: center; }
+    .card { background: #1e293b; padding: 2rem; border-radius: 1rem; border: 1px solid #334155; max-width: 480px; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #38bdf8; }
+    p { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>GDG Peer Learning</h1>
+    <p>Loading application build assets... Please refresh in a moment.</p>
+  </div>
+</body>
+</html>`);
 });
 
 const PORT = process.env.PORT || 5000;
