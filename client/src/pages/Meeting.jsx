@@ -4,7 +4,7 @@ import CodeEditor from '../components/CodeEditor';
 import Whiteboard from '../components/Whiteboard';
 import CameraPanel from '../components/CameraPanel';
 import { socketService } from '../utils/socket';
-import { getStoredUser } from '../utils/userClient';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Columns, LayoutGrid, Maximize2, Minimize2, PhoneOff, 
   Sparkles, RotateCcw, MonitorPlay, Users, Layers,
@@ -178,7 +178,7 @@ const MeetingLobby = () => {
 // -------------------------------------------------------------
 const MeetingRoom = ({ roomId }) => {
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const { user } = useAuth();
 
   // Layout states
   const [leftPct, setLeftPct] = useState(() => {
@@ -218,13 +218,12 @@ const MeetingRoom = ({ roomId }) => {
 
   // 1. Initialize Socket Connection for Room
   useEffect(() => {
-    const token = localStorage.getItem('token') || 'demo-token';
     const currentUser = {
       name: user?.name || 'Developer',
-      userId: user?.userId || 'guest-' + Math.floor(Math.random() * 1000)
+      userId: user?._id || user?.userId
     };
 
-    socketService.connect(token, currentUser.userId);
+    socketService.connect(null, currentUser.userId);
 
     const onConnect = () => {
       socketService.emit('join_session', { roomId, user: currentUser });
@@ -322,7 +321,7 @@ const MeetingRoom = ({ roomId }) => {
       socketService.off('room_state');
       socketService.off('peer_typing');
     };
-  }, [roomId]);
+  }, [roomId, user?._id, user?.userId, user?.name]);
 
   // Timer counter
   useEffect(() => {
@@ -811,7 +810,7 @@ const MeetingRoom = ({ roomId }) => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
 
-              {occupants.filter(o => o.id !== user?.userId && o.userId !== user?.userId).map((peer, i) => (
+              {occupants.filter(o => o.id !== (user?._id || user?.userId) && o.userId !== (user?._id || user?.userId)).map((peer, i) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-zinc-800 text-white flex items-center justify-center text-xs font-bold">
@@ -848,7 +847,7 @@ const MeetingRoom = ({ roomId }) => {
 // -------------------------------------------------------------
 // 3. Main Export: Routes between Lobby & Active Room
 // -------------------------------------------------------------
-const Meeting = () => {
+const LegacyMeeting = () => {
  const navigate = useNavigate();
 
  // Left column width percent (30% to 80%)
@@ -1069,6 +1068,11 @@ const Meeting = () => {
  </div>
  </div>
  );
+};
+
+const Meeting = () => {
+  const { id } = useParams();
+  return id ? <MeetingRoom roomId={id} /> : <MeetingLobby />;
 };
 
 export default Meeting;

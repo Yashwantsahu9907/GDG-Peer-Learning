@@ -1,5 +1,15 @@
 import jwt from 'jsonwebtoken';
 
+export const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT_SECRET must be configured');
+  }
+
+  return secret;
+};
+
 export const isAuth = (req, res, next) => {
   try {
     const token = req.cookies.jwt;
@@ -7,7 +17,7 @@ export const isAuth = (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authenticated, no token' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     next();
   } catch (error) {

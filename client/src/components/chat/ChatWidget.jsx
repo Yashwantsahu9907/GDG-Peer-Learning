@@ -121,7 +121,7 @@ const ChatWidget = ({ user, onClose }) => {
  .catch(err => console.error('Users fetch error:', err));
 
  // Fetch Global Chat History
- fetch(`${serverUrl}/api/chat/global?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/global?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.messages)) {
@@ -132,7 +132,7 @@ const ChatWidget = ({ user, onClose }) => {
 
  // Fetch Contacts if user is logged in
  if (currentUserId && currentUserId !=='guest') {
- fetch(`${serverUrl}/api/chat/contacts/${currentUserId}?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/contacts/${currentUserId}?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.contacts)) {
@@ -146,7 +146,7 @@ const ChatWidget = ({ user, onClose }) => {
  // 3. Fetch Personal Messages when a contact is opened
  useEffect(() => {
  if (activeTab ==='personal' && selectedContact) {
- fetch(`${serverUrl}/api/chat/personal/${currentUserId}/${selectedContact.userId}?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/personal/${currentUserId}/${selectedContact.userId}?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.messages)) {

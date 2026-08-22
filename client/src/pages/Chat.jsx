@@ -72,7 +72,7 @@ const Chat = () => {
  }, [currentUserId]);
 
  useEffect(() => {
- fetch(`${serverUrl}/api/chat/global?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/global?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.messages)) {
@@ -82,7 +82,7 @@ const Chat = () => {
  .catch(err => console.error('Global Chat fetch error:', err));
 
  if (currentUserId && currentUserId !=='guest') {
- fetch(`${serverUrl}/api/chat/contacts/${currentUserId}?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/contacts/${currentUserId}?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.contacts)) {
@@ -95,7 +95,7 @@ const Chat = () => {
 
  useEffect(() => {
  if (activeTab ==='personal' && selectedContact) {
- fetch(`${serverUrl}/api/chat/personal/${currentUserId}/${selectedContact.userId}?_t=${Date.now()}`)
+ fetch(`${serverUrl}/api/chat/personal/${currentUserId}/${selectedContact.userId}?_t=${Date.now()}`, { credentials: 'include' })
  .then(res => res.json())
  .then(data => {
  if (data.success && Array.isArray(data.messages)) {
