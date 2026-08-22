@@ -112,7 +112,7 @@ const SkillExchange = () => (
  </div>
  </div>
  </div>
- <div className="relative h-[400px] rounded-3xl bg-gradient-to-br from-(--color-accent-light) to-(--color-bg-secondary) border border-(--color-border) overflow-hidden flex items-center justify-center">
+ <div className="relative h-100 rounded-3xl bg-linear-to-br from-(--color-accent-light) to-(--color-bg-secondary) border border-(--color-border) overflow-hidden flex items-center justify-center">
  {/* Abstract visual representation */}
  <div className="absolute w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl -top-10 -left-10"></div>
  <div className="absolute w-64 h-64 bg-blue-400/20 rounded-full blur-3xl -bottom-10 -right-10"></div>
@@ -170,7 +170,7 @@ const HallOfFame = () => (
 
 const BountySection = () => (
  <section id="bounties-section" className="w-full max-w-6xl mx-auto px-4 py-20">
- <div className="bg-gradient-to-br from-(--color-bg-primary) to-(--color-bg-secondary) rounded-3xl border border-(--color-border) p-10 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
+ <div className="bg-linear-to-br from-(--color-bg-primary) to-(--color-bg-secondary) rounded-3xl border border-(--color-border) p-10 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
  <div className="absolute top-0 right-0 w-64 h-64 bg-(--color-accent) opacity-5 blur-3xl rounded-full"></div>
  
  <div className="lg:w-1/2 relative z-10">
