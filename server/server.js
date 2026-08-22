@@ -4,13 +4,19 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
 import connectDB from './config/db.js';
 import User from './models/User.js';
+import { getJwtSecret } from './middlewares/authMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 
 import notificationRoutes from './routes/notificationRoutes.js';
 import { createNotification } from './services/notificationService.js';
+
+if (process.env.NODE_ENV === 'production') {
+  getJwtSecret();
+}
 
 // Connect to database
 connectDB();
@@ -31,10 +37,10 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
     const cleanOrigin = origin.replace(/\/$/, '');
-    if (allowedOrigins.some(o => o.replace(/\/$/, '') === cleanOrigin) || process.env.NODE_ENV !== 'production') {
+    if (allowedOrigins.some(o => o.replace(/\/$/, '') === cleanOrigin)) {
       return callback(null, true);
     }
-    return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS'));
   },
   credentials: true
 };
@@ -42,9 +48,33 @@ const corsOptions = {
 // Initialize Socket.io
 export const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => callback(null, true),
+    origin: corsOptions.origin,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
     credentials: true
+  }
+});
+
+const getSocketToken = (socket) => {
+  const authorization = socket.handshake.headers.authorization;
+  if (authorization?.startsWith('Bearer ')) return authorization.slice(7);
+
+  const cookieHeader = socket.handshake.headers.cookie || '';
+  return cookieHeader
+    .split(';')
+    .map(cookie => cookie.trim())
+    .find(cookie => cookie.startsWith('jwt='))
+    ?.slice(4);
+};
+
+io.use((socket, next) => {
+  try {
+    const token = getSocketToken(socket);
+    if (!token) return next(new Error('Authentication required'));
+
+    socket.user = jwt.verify(token, getJwtSecret());
+    next();
+  } catch {
+    next(new Error('Authentication required'));
   }
 });
 
@@ -70,6 +100,7 @@ app.use('/api', executeRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Test Endpoints to simulate actions
+if (process.env.NODE_ENV !== 'production') {
 app.post('/api/test/follow', async (req, res) => {
   const { senderId, recipientId } = req.body;
   
@@ -121,14 +152,33 @@ app.post('/api/test/message', async (req, res) => {
   
   res.json({ success: true });
 });
+}
 
 // In-memory room occupancy tracking
 const sessionRooms = new Map();
 
 // Socket.io Connection
 io.on('connection', (socket) => {
-  const { userId, auth_token } = socket.handshake.auth || {};
-  const displayId = userId || socket.id;
+  const userId = socket.user.userId;
+  const displayId = userId;
+  const isInCurrentRoom = (roomId) => Boolean(
+    roomId && roomId === socket.currentRoom && socket.rooms.has(roomId)
+  );
+
+  const leaveCurrentRoom = () => {
+    const roomId = socket.currentRoom;
+    if (!roomId || !sessionRooms.has(roomId)) return;
+
+    const roomData = sessionRooms.get(roomId);
+    roomData.users.delete(socket.id);
+    socket.leave(roomId);
+    socket.to(roomId).emit('peer_left', {
+      peerId: socket.id,
+      occupantCount: roomData.users.size
+    });
+    if (roomData.users.size === 0) sessionRooms.delete(roomId);
+    socket.currentRoom = null;
+  };
 
   // Global Chat
   socket.on('join_global', () => {
@@ -139,7 +189,7 @@ io.on('connection', (socket) => {
     try {
       const msgData = {
         chatType: 'global',
-        senderId: data.senderId || displayId,
+        senderId: userId,
         senderName: data.senderName || 'Anonymous',
         text: data.text,
         replyTo: data.replyTo || null,
@@ -175,15 +225,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Async DB check for user connection logging & personal room (safe against non-ObjectId strings)
-  if (userId) {
-    socket.join(`user:${userId}`); // Ensure private user room for notifications
-    socket.join(userId);
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      User.findById(userId).catch(err => {
-        console.warn('Socket user lookup error:', err.message);
-      });
-    }
+  socket.join(`user:${userId}`);
+  socket.join(userId);
+  if (mongoose.Types.ObjectId.isValid(userId)) {
+    User.findById(userId).catch(err => {
+      console.warn('Socket user lookup error:', err.message);
+    });
   }
 
   // Personal Chat
@@ -191,7 +238,7 @@ io.on('connection', (socket) => {
     try {
       const msgData = {
         chatType: 'personal',
-        senderId: data.senderId,
+        senderId: userId,
         senderName: data.senderName,
         receiverId: data.receiverId,
         text: data.text,
@@ -207,15 +254,15 @@ io.on('connection', (socket) => {
       }
 
       io.to(data.receiverId).emit('receive_personal_message', savedMsg);
-      io.to(data.senderId).emit('receive_personal_message', savedMsg);
+      io.to(userId).emit('receive_personal_message', savedMsg);
       
       // Create message notification
       await createNotification({
         recipientId: data.receiverId,
-        senderId: data.senderId,
+        senderId: userId,
         type: 'MESSAGE',
         message: 'sent you a message.',
-        link: `/chat/${data.senderId}`
+        link: `/chat/${userId}`
       }, io);
 
       // Check for mentions in personal chat (if someone mentions a third person)
@@ -225,13 +272,13 @@ io.on('connection', (socket) => {
 
       for (const username of mentionedUsernames) {
         const mentionedUser = await User.findOne({ name: username });
-        if (mentionedUser && mentionedUser._id.toString() !== data.senderId) {
+        if (mentionedUser && mentionedUser._id.toString() !== userId) {
           await createNotification({
             recipientId: mentionedUser._id.toString(),
-            senderId: data.senderId,
+            senderId: userId,
             type: 'MENTION',
             message: 'mentioned you in a message.',
-            link: `/chat/${data.senderId}`
+            link: `/chat/${userId}`
           }, io);
         }
       }
@@ -243,7 +290,7 @@ io.on('connection', (socket) => {
   socket.on('edit_message', async (data) => {
     try {
       const msg = await Message.findById(data.messageId);
-      if (msg && msg.senderId === data.senderId) {
+      if (msg && msg.senderId === userId) {
         msg.text = data.text;
         msg.isEdited = true;
         await msg.save();
@@ -262,7 +309,7 @@ io.on('connection', (socket) => {
   socket.on('delete_message', async (data) => {
     try {
       const msg = await Message.findById(data.messageId);
-      if (msg && msg.senderId === data.senderId) {
+      if (msg && msg.senderId === userId) {
         await Message.findByIdAndDelete(data.messageId);
         if (msg.chatType === 'global') {
           io.to('global_chat').emit('message_deleted', { messageId: msg._id, chatType: msg.chatType });
@@ -280,10 +327,16 @@ io.on('connection', (socket) => {
   // Collaborative Session / Meeting Room Events
   // ==========================================
   socket.on('join_session', ({ roomId, user: sessionUser }) => {
-    if (!roomId) return;
+    if (typeof roomId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(roomId)) return;
+    if (socket.currentRoom === roomId) return;
+
+    leaveCurrentRoom();
     socket.join(roomId);
     socket.currentRoom = roomId;
-    socket.sessionUser = sessionUser || { name: 'Peer', id: displayId };
+    socket.sessionUser = {
+      name: typeof sessionUser?.name === 'string' ? sessionUser.name.slice(0, 80) : 'Peer',
+      userId: displayId
+    };
 
     if (!sessionRooms.has(roomId)) {
       sessionRooms.set(roomId, {
@@ -324,7 +377,7 @@ io.on('connection', (socket) => {
 
   // Real-time Collaborative Code Editing
   socket.on('code_change', ({ roomId, code_diff, cursorPosition, language }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     const roomData = sessionRooms.get(roomId);
     if (roomData) {
       if (code_diff !== undefined) roomData.code = code_diff;
@@ -341,7 +394,7 @@ io.on('connection', (socket) => {
 
   // Real-time Code Execution Sync (Output & Running State)
   socket.on('code_executing', ({ roomId, language }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     socket.to(roomId).emit('code_executing', {
       runnerName: socket.sessionUser?.name || 'Peer',
       language
@@ -349,7 +402,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('code_execution_result', ({ roomId, output, isError, executionTime, language }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     const roomData = sessionRooms.get(roomId);
     if (roomData) {
       roomData.lastOutput = { output, isError, executionTime, language };
@@ -365,7 +418,7 @@ io.on('connection', (socket) => {
 
   // Real-time Session Chat
   socket.on('session_chat_message', ({ roomId, message }) => {
-    if (!roomId || !message) return;
+    if (!isInCurrentRoom(roomId) || !message) return;
     io.to(roomId).emit('session_chat_message', {
       ...message,
       senderSocketId: socket.id
@@ -374,7 +427,7 @@ io.on('connection', (socket) => {
 
   // Collaborative Session Notes Sync
   socket.on('session_notes_change', ({ roomId, notes }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     const roomData = sessionRooms.get(roomId);
     if (roomData && notes !== undefined) {
       roomData.notes = notes;
@@ -387,7 +440,7 @@ io.on('connection', (socket) => {
 
   // Collaborative Whiteboard Sync
   socket.on('whiteboard_draw', ({ roomId, drawData }) => {
-    if (!roomId || !drawData) return;
+    if (!isInCurrentRoom(roomId) || !drawData) return;
     const roomData = sessionRooms.get(roomId);
     if (roomData) {
       roomData.drawHistory.push(drawData);
@@ -400,7 +453,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('whiteboard_clear', ({ roomId }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     const roomData = sessionRooms.get(roomId);
     if (roomData) {
       roomData.drawHistory = [];
@@ -412,7 +465,7 @@ io.on('connection', (socket) => {
 
   // Typing indicator
   socket.on('peer_typing', ({ roomId, isTyping }) => {
-    if (!roomId) return;
+    if (!isInCurrentRoom(roomId)) return;
     socket.to(roomId).emit('peer_typing', {
       peerId: socket.id,
       userName: socket.sessionUser?.name || 'Peer',
@@ -422,6 +475,7 @@ io.on('connection', (socket) => {
 
   // WebRTC Signaling
   socket.on('webrtc_offer', ({ roomId, offer, target }) => {
+    if (!isInCurrentRoom(roomId)) return;
     const payload = {
       offer,
       sender: socket.id,
@@ -435,6 +489,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('webrtc_answer', ({ roomId, answer, target }) => {
+    if (!isInCurrentRoom(roomId)) return;
     const payload = {
       answer,
       sender: socket.id,
@@ -448,6 +503,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('webrtc_ice_candidate', ({ roomId, candidate, target }) => {
+    if (!isInCurrentRoom(roomId)) return;
     const payload = {
       candidate,
       sender: socket.id
@@ -460,32 +516,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leave_session', ({ roomId }) => {
-    if (roomId && sessionRooms.has(roomId)) {
-      const roomData = sessionRooms.get(roomId);
-      roomData.users.delete(socket.id);
-      socket.leave(roomId);
-      socket.to(roomId).emit('peer_left', {
-        peerId: socket.id,
-        occupantCount: roomData.users.size
-      });
-      if (roomData.users.size === 0) {
-        sessionRooms.delete(roomId);
-      }
-    }
+    if (isInCurrentRoom(roomId)) leaveCurrentRoom();
   });
 
   socket.on('disconnect', () => {
-    if (socket.currentRoom && sessionRooms.has(socket.currentRoom)) {
-      const roomData = sessionRooms.get(socket.currentRoom);
-      roomData.users.delete(socket.id);
-      socket.to(socket.currentRoom).emit('peer_left', {
-        peerId: socket.id,
-        occupantCount: roomData.users.size
-      });
-      if (roomData.users.size === 0) {
-        sessionRooms.delete(socket.currentRoom);
-      }
-    }
+    leaveCurrentRoom();
   });
 });
 

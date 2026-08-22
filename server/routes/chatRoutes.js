@@ -1,11 +1,12 @@
 import express from 'express';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
+import { isAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Get global chat messages
-router.get('/global', async (req, res) => {
+router.get('/global', isAuth, async (req, res) => {
   try {
     const messages = await Message.find({ chatType: 'global' }).sort({ timestamp: -1 }).limit(50);
     res.status(200).json({ success: true, messages: messages.reverse() });
@@ -16,9 +17,12 @@ router.get('/global', async (req, res) => {
 });
 
 // Get personal chat messages between two users
-router.get('/personal/:userId1/:userId2', async (req, res) => {
+router.get('/personal/:userId1/:userId2', isAuth, async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
+    if (req.user.userId !== userId1 && req.user.userId !== userId2) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this conversation' });
+    }
     const messages = await Message.find({
       chatType: 'personal',
       $or: [
@@ -35,9 +39,12 @@ router.get('/personal/:userId1/:userId2', async (req, res) => {
 });
 
 // Get recent personal chat contacts for a user
-router.get('/contacts/:userId', async (req, res) => {
+router.get('/contacts/:userId', isAuth, async (req, res) => {
   try {
     const { userId } = req.params;
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view these contacts' });
+    }
     
     // Find all personal messages where user is sender or receiver
     const messages = await Message.find({

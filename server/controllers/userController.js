@@ -1,6 +1,17 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 
+const getTargetUserId = (req, res) => {
+  if (req.params.id !== 'me') return req.params.id;
+
+  if (!req.user?.userId) {
+    res.status(401).json({ success: false, message: 'Authentication is required to access your profile' });
+    return null;
+  }
+
+  return req.user.userId;
+};
+
 // Search users with query
 export const searchUsers = async (req, res) => {
   try {
@@ -84,12 +95,10 @@ export const searchUsers = async (req, res) => {
 // Get User Profile by ID
 export const getUserProfile = async (req, res) => {
   try {
-    const targetUserId = req.params.id === 'me' ? req.user?.userId : req.params.id;
+    const targetUserId = getTargetUserId(req, res);
     const currentUserId = req.user?.userId;
 
-    if (!targetUserId) {
-      return res.status(400).json({ success: false, message: 'User ID is required' });
-    }
+    if (!targetUserId) return;
 
     const user = await User.findById(targetUserId).select('-password');
     if (!user) {
@@ -315,7 +324,8 @@ export const toggleFriend = async (req, res) => {
 // Get List of Followers for a user
 export const getFollowers = async (req, res) => {
   try {
-    const targetUserId = req.params.id === 'me' ? req.user.userId : req.params.id;
+    const targetUserId = getTargetUserId(req, res);
+    if (!targetUserId) return;
     const currentUserId = req.user?.userId;
 
     const user = await User.findById(targetUserId).populate('followers', 'name email role branch semester bio skills followers friends streak gdgCoins');
@@ -347,7 +357,8 @@ export const getFollowers = async (req, res) => {
 // Get List of Following for a user
 export const getFollowing = async (req, res) => {
   try {
-    const targetUserId = req.params.id === 'me' ? req.user.userId : req.params.id;
+    const targetUserId = getTargetUserId(req, res);
+    if (!targetUserId) return;
     const currentUserId = req.user?.userId;
 
     const user = await User.findById(targetUserId).populate('following', 'name email role branch semester bio skills followers friends streak gdgCoins');
@@ -379,7 +390,8 @@ export const getFollowing = async (req, res) => {
 // Get List of Friends for a user
 export const getFriends = async (req, res) => {
   try {
-    const targetUserId = req.params.id === 'me' ? req.user.userId : req.params.id;
+    const targetUserId = getTargetUserId(req, res);
+    if (!targetUserId) return;
     const currentUserId = req.user?.userId;
 
     const user = await User.findById(targetUserId).populate('friends', 'name email role branch semester bio skills followers friends streak gdgCoins');

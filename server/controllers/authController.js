@@ -1,8 +1,9 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../middlewares/authMiddleware.js';
 
 const generateToken = (res, userId, role) => {
-  const token = jwt.sign({ userId, role }, process.env.JWT_SECRET || 'secret123', {
+  const token = jwt.sign({ userId, role }, getJwtSecret(), {
     expiresIn: '30d',
   });
 
