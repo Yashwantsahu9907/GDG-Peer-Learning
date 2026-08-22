@@ -1,6 +1,7 @@
 // Centralized Environment & API Configuration for Render & Local Environments
 
-const rawApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_SERVER_URL || 'http://localhost:5000/api';
+const defaultHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const rawApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_SERVER_URL || `http://${defaultHost}:5000/api`;
 
 // Remove trailing slashes
 const cleanUrl = rawApiUrl.replace(/\/+$/, '');

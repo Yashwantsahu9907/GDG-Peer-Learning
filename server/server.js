@@ -339,6 +339,30 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Real-time Code Execution Sync (Output & Running State)
+  socket.on('code_executing', ({ roomId, language }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('code_executing', {
+      runnerName: socket.sessionUser?.name || 'Peer',
+      language
+    });
+  });
+
+  socket.on('code_execution_result', ({ roomId, output, isError, executionTime, language }) => {
+    if (!roomId) return;
+    const roomData = sessionRooms.get(roomId);
+    if (roomData) {
+      roomData.lastOutput = { output, isError, executionTime, language };
+    }
+    socket.to(roomId).emit('code_execution_result', {
+      output,
+      isError,
+      executionTime,
+      language,
+      runnerName: socket.sessionUser?.name || 'Peer'
+    });
+  });
+
   // Real-time Session Chat
   socket.on('session_chat_message', ({ roomId, message }) => {
     if (!roomId || !message) return;
