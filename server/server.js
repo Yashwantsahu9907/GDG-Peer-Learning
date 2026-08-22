@@ -58,8 +58,10 @@ import Message from './models/Message.js';
 import bountyRoutes from './routes/bountyRoutes.js';
 import executeRoutes from './routes/executeRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/bounties', bountyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api', executeRoutes);
@@ -284,28 +286,50 @@ io.on('connection', (socket) => {
     socket.sessionUser = sessionUser || { name: 'Peer', id: displayId };
 
     if (!sessionRooms.has(roomId)) {
-      sessionRooms.set(roomId, new Map());
+      sessionRooms.set(roomId, {
+        users: new Map(),
+        code: '// Collaborative Session\n// Share the invite link with peers to code and collaborate together!\n\nfunction welcome() {\n  console.log("Welcome to GDG Peer Collab Room!");\n}\n\nwelcome();\n',
+        language: 'javascript',
+        notes: '# GDG Peer Collab Notes\n\n- Collaborative shared notes\n- Real-time markdown synced between all peers\n- Discuss architecture and solutions here\n',
+        drawHistory: []
+      });
     }
-    const roomUsers = sessionRooms.get(roomId);
-    roomUsers.set(socket.id, socket.sessionUser);
+
+    const roomData = sessionRooms.get(roomId);
+    roomData.users.set(socket.id, socket.sessionUser);
 
     // Notify other peers in this room
     socket.to(roomId).emit('peer_joined', {
       peerId: socket.id,
       user: socket.sessionUser,
-      occupantCount: roomUsers.size
+      occupantCount: roomData.users.size
     });
 
-    // Send room occupancy list to the newly joined peer
+    // Send room occupancy list AND current room state to the newly joined peer
     socket.emit('room_users', {
-      users: Array.from(roomUsers.entries()).map(([peerId, u]) => ({ peerId, ...u })),
-      occupantCount: roomUsers.size
+      users: Array.from(roomData.users.entries()).map(([peerId, u]) => ({ peerId, ...u })),
+      occupantCount: roomData.users.size
+    });
+
+    socket.emit('room_state', {
+      roomId,
+      code: roomData.code,
+      language: roomData.language,
+      notes: roomData.notes,
+      drawHistory: roomData.drawHistory,
+      users: Array.from(roomData.users.entries()).map(([peerId, u]) => ({ peerId, ...u })),
+      occupantCount: roomData.users.size
     });
   });
 
   // Real-time Collaborative Code Editing
   socket.on('code_change', ({ roomId, code_diff, cursorPosition, language }) => {
     if (!roomId) return;
+    const roomData = sessionRooms.get(roomId);
+    if (roomData) {
+      if (code_diff !== undefined) roomData.code = code_diff;
+      if (language) roomData.language = language;
+    }
     socket.to(roomId).emit('code_update', {
       code: code_diff,
       cursorPosition,
@@ -327,6 +351,10 @@ io.on('connection', (socket) => {
   // Collaborative Session Notes Sync
   socket.on('session_notes_change', ({ roomId, notes }) => {
     if (!roomId) return;
+    const roomData = sessionRooms.get(roomId);
+    if (roomData && notes !== undefined) {
+      roomData.notes = notes;
+    }
     socket.to(roomId).emit('notes_update', {
       notes,
       senderId: socket.id
@@ -336,6 +364,11 @@ io.on('connection', (socket) => {
   // Collaborative Whiteboard Sync
   socket.on('whiteboard_draw', ({ roomId, drawData }) => {
     if (!roomId || !drawData) return;
+    const roomData = sessionRooms.get(roomId);
+    if (roomData) {
+      roomData.drawHistory.push(drawData);
+      if (roomData.drawHistory.length > 500) roomData.drawHistory.shift();
+    }
     socket.to(roomId).emit('whiteboard_draw', {
       drawData,
       senderId: socket.id
@@ -344,6 +377,10 @@ io.on('connection', (socket) => {
 
   socket.on('whiteboard_clear', ({ roomId }) => {
     if (!roomId) return;
+    const roomData = sessionRooms.get(roomId);
+    if (roomData) {
+      roomData.drawHistory = [];
+    }
     socket.to(roomId).emit('whiteboard_clear', {
       senderId: socket.id
     });
@@ -361,39 +398,53 @@ io.on('connection', (socket) => {
 
   // WebRTC Signaling
   socket.on('webrtc_offer', ({ roomId, offer, target }) => {
+    const payload = {
+      offer,
+      sender: socket.id,
+      senderUser: socket.sessionUser || { name: 'Peer', id: displayId }
+    };
     if (target) {
-      io.to(target).emit('webrtc_offer', { offer, sender: socket.id });
+      io.to(target).emit('webrtc_offer', payload);
     } else if (roomId) {
-      socket.to(roomId).emit('webrtc_offer', { offer, sender: socket.id });
+      socket.to(roomId).emit('webrtc_offer', payload);
     }
   });
 
   socket.on('webrtc_answer', ({ roomId, answer, target }) => {
+    const payload = {
+      answer,
+      sender: socket.id,
+      senderUser: socket.sessionUser || { name: 'Peer', id: displayId }
+    };
     if (target) {
-      io.to(target).emit('webrtc_answer', { answer, sender: socket.id });
+      io.to(target).emit('webrtc_answer', payload);
     } else if (roomId) {
-      socket.to(roomId).emit('webrtc_answer', { answer, sender: socket.id });
+      socket.to(roomId).emit('webrtc_answer', payload);
     }
   });
 
   socket.on('webrtc_ice_candidate', ({ roomId, candidate, target }) => {
+    const payload = {
+      candidate,
+      sender: socket.id
+    };
     if (target) {
-      io.to(target).emit('webrtc_ice_candidate', { candidate, sender: socket.id });
+      io.to(target).emit('webrtc_ice_candidate', payload);
     } else if (roomId) {
-      socket.to(roomId).emit('webrtc_ice_candidate', { candidate, sender: socket.id });
+      socket.to(roomId).emit('webrtc_ice_candidate', payload);
     }
   });
 
   socket.on('leave_session', ({ roomId }) => {
     if (roomId && sessionRooms.has(roomId)) {
-      const roomUsers = sessionRooms.get(roomId);
-      roomUsers.delete(socket.id);
+      const roomData = sessionRooms.get(roomId);
+      roomData.users.delete(socket.id);
       socket.leave(roomId);
       socket.to(roomId).emit('peer_left', {
         peerId: socket.id,
-        occupantCount: roomUsers.size
+        occupantCount: roomData.users.size
       });
-      if (roomUsers.size === 0) {
+      if (roomData.users.size === 0) {
         sessionRooms.delete(roomId);
       }
     }
@@ -401,13 +452,13 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     if (socket.currentRoom && sessionRooms.has(socket.currentRoom)) {
-      const roomUsers = sessionRooms.get(socket.currentRoom);
-      roomUsers.delete(socket.id);
+      const roomData = sessionRooms.get(socket.currentRoom);
+      roomData.users.delete(socket.id);
       socket.to(socket.currentRoom).emit('peer_left', {
         peerId: socket.id,
-        occupantCount: roomUsers.size
+        occupantCount: roomData.users.size
       });
-      if (roomUsers.size === 0) {
+      if (roomData.users.size === 0) {
         sessionRooms.delete(socket.currentRoom);
       }
     }
